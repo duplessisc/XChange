@@ -1,18 +1,26 @@
 package info.bitrich.xchangestream.btcmarkets.service;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import info.bitrich.xchangestream.btcmarkets.dto.BTCMarketsWebSocketHeartbeatMessage;
 import info.bitrich.xchangestream.btcmarkets.dto.BTCMarketsWebSocketSubscriptionMessage;
 import info.bitrich.xchangestream.service.netty.JsonNettyStreamingService;
+import info.bitrich.xchangestream.service.netty.StreamingObjectMapperHelper;
+import io.reactivex.Observable;
 import java.io.IOException;
+import java.nio.channels.NonReadableChannelException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BTCMarketsStreamingService extends JsonNettyStreamingService {
+
   //	TODO change to enumerator
   static final String CHANNEL_ORDERBOOK = "orderbook";
   static final String CHANNEL_HEARTBEAT = "heartbeat";
@@ -20,11 +28,22 @@ public class BTCMarketsStreamingService extends JsonNettyStreamingService {
   static final String CHANNEL_TRADE = "trade";
 
   private static final Logger LOG = LoggerFactory.getLogger(BTCMarketsStreamingService.class);
+  /** public channels are channels that are available publicly and do not need authentication */
+  private final List<String> publicChannels =
+      Lists.newArrayList(CHANNEL_ORDERBOOK, CHANNEL_HEARTBEAT, CHANNEL_TICKER, CHANNEL_TRADE);
+  /** private channels are channels that requires and authenticated/signed message */
+  private final List<String> privateChannels = Lists.newArrayList();
+
+  private final ObjectMapper mapper = StreamingObjectMapperHelper.getObjectMapper();
+
   private final ConcurrentHashMap<String, Set<String>> subscribedMarketIds =
       new ConcurrentHashMap<String, Set<String>>();
+  private Observable<JsonNode> heartbeat;
+  private String heartbeatChannel;
 
   public BTCMarketsStreamingService(String apiUrl) {
     super(apiUrl);
+    mapper.configure(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY, true);
   }
 
   /*
@@ -38,7 +57,7 @@ public class BTCMarketsStreamingService extends JsonNettyStreamingService {
     // Create the first subscription message
     if (!hasActiveSubscriptions()) {
       return BTCMarketsWebSocketSubscriptionMessage.getFirstSubcritionMessage(
-          Lists.newArrayList(marketIds),
+          marketIds == null ? null : Lists.newArrayList(marketIds),
           Lists.newArrayList(channelName, CHANNEL_HEARTBEAT),
           null,
           null,
@@ -47,13 +66,6 @@ public class BTCMarketsStreamingService extends JsonNettyStreamingService {
       return BTCMarketsWebSocketSubscriptionMessage.getAddSubcritionMessage(
           Lists.newArrayList(marketIds), Lists.newArrayList(channelName), null, null, null);
     }
-
-    //    return new BTCMarketsWebSocketSubscriptionMessage(
-    //        new ArrayList<>(subscribedMarketIds),
-    //        Lists.newArrayList(channelName, CHANNEL_HEARTBEAT),
-    //        null,
-    //        null,
-    //        null);
   }
 
   private BTCMarketsWebSocketSubscriptionMessage buildRemoveSubscriptionMessage(
@@ -69,26 +81,20 @@ public class BTCMarketsStreamingService extends JsonNettyStreamingService {
 
   @Override
   protected String getChannelNameFromMessage(JsonNode message) {
+    LOG.trace("entering: getChannelNameFromMessage");
     final String messageType = message.get("messageType").asText();
-    if (messageType.startsWith(CHANNEL_ORDERBOOK)
-        | messageType.startsWith(CHANNEL_TICKER)
-        | messageType.startsWith(CHANNEL_TRADE)) {
+
+    if (messageType.startsWith(CHANNEL_HEARTBEAT)) return heartbeatChannel;
+    if (message.get("marketId") != null)
       return messageType + ":" + message.get("marketId").asText();
-    }
-    return messageType;
+    else return messageType;
   }
 
   @Override
   public String getSubscribeMessage(String channelName, Object... args) throws IOException {
+    LOG.trace("entering: getSubscribeMessage");
+    if (publicChannels.contains(channelName)) {
 
-    if (CHANNEL_ORDERBOOK.equals(channelName)
-        | CHANNEL_TICKER.equals(channelName)
-        | CHANNEL_TRADE.equals(channelName)) {
-      // TODO - removing this because it only ever uses the first Instrument provided. Re-look
-      // at the reasoning here. For now we are changing all this to enable different
-      // channel/instrument subscriptions
-      //      subscribedMarketIds.add(args[0].toString());
-      //      LOG.debug("Now subscribed to orderbooks {}", subscribedMarketIds);
       LOG.debug("Now subscribing to {}:{}", channelName, args);
       Set<String> newMarketIds = Sets.newConcurrentHashSet();
       if (args != null) {
@@ -96,7 +102,6 @@ public class BTCMarketsStreamingService extends JsonNettyStreamingService {
           newMarketIds.add(marketId.toString());
         }
         // Add the marketIds to the Channel
-        //        if (!subscribedMarketIds.containsKey(channelName))
         Set<String> updateMarketIds = subscribedMarketIds.get(channelName);
         if (updateMarketIds != null) {
           updateMarketIds.addAll(newMarketIds);
@@ -110,7 +115,13 @@ public class BTCMarketsStreamingService extends JsonNettyStreamingService {
           channelName,
           subscribedMarketIds.get(channelName),
           newMarketIds);
-      return objectMapper.writeValueAsString(buildSubscribeMessage(channelName, newMarketIds));
+
+      BTCMarketsWebSocketSubscriptionMessage subscriptionMsg =
+          buildSubscribeMessage(channelName, newMarketIds);
+      if (subscriptionMsg.channels.contains(CHANNEL_HEARTBEAT))
+        heartbeatChannel = getSubscriptionUniqueId(channelName, args);
+      return objectMapper.writeValueAsString(subscriptionMsg);
+
     } else {
       throw new IllegalArgumentException(
           "Can't create subscribe messsage for channel " + channelName);
@@ -119,15 +130,17 @@ public class BTCMarketsStreamingService extends JsonNettyStreamingService {
 
   @Override
   public String getSubscriptionUniqueId(String channelName, Object... args) {
-    LOG.debug("Returning unique id {}", channelName + ":" + args[0].toString());
-    return channelName + ":" + args[0].toString();
+
+    String uniqueId = args == null ? channelName : channelName + ":" + args[0].toString();
+
+    LOG.debug("Returning unique id {}", uniqueId);
+    return uniqueId;
   }
 
   @Override
   public String getUnsubscribeMessage(String channelName) throws IOException {
-    if (channelName.startsWith(CHANNEL_ORDERBOOK)
-        | channelName.startsWith(CHANNEL_TICKER)
-        | channelName.startsWith(CHANNEL_TRADE)) {
+
+    if (publicChannels.contains(channelName) | publicChannels.contains(channelName.split(":")[0])) {
       LOG.debug(
           "getUnsubscribeMessage: what is in subscribedMarketIds {}:{}",
           channelName,
@@ -147,5 +160,28 @@ public class BTCMarketsStreamingService extends JsonNettyStreamingService {
      * subscribe to heartbeat and blockwait for this to return before adding any other subscriptions.
      */
     return !channels.isEmpty();
+  }
+
+  @Override
+  public Observable<JsonNode> subscribeChannel(String channelName, Object... args) {
+
+    boolean hasActiveSubription = hasActiveSubscriptions();
+    Observable<JsonNode> subscription = super.subscribeChannel(channelName, args);
+    // process hearbeat events
+    if (!hasActiveSubription) {
+      heartbeat = subscription;
+      heartbeat
+          .filter(node -> node.findValue("messageType").asText().equals(CHANNEL_HEARTBEAT))
+          .map(node -> mapper.treeToValue(node, BTCMarketsWebSocketHeartbeatMessage.class))
+          .forEach(hearbeat -> LOG.info("heartbeat -  {}", hearbeat));
+    }
+
+    return subscription;
+  }
+
+  /** @return {@code} Observable<JsonNode> that will receive heartbeat events} */
+  public Observable<JsonNode> getHeartbeatSubscription() throws NonReadableChannelException {
+    if (heartbeat == null) throw new NonReadableChannelException();
+    return heartbeat;
   }
 }
