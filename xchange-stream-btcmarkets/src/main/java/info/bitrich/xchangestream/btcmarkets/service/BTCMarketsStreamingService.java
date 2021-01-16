@@ -1,4 +1,4 @@
-package info.bitrich.xchangestream.btcmarkets;
+package info.bitrich.xchangestream.btcmarkets.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class BTCMarketsStreamingService extends JsonNettyStreamingService {
+public class BTCMarketsStreamingService extends JsonNettyStreamingService {
   //	TODO change to enumerator
   static final String CHANNEL_ORDERBOOK = "orderbook";
   static final String CHANNEL_HEARTBEAT = "heartbeat";
@@ -140,6 +140,12 @@ class BTCMarketsStreamingService extends JsonNettyStreamingService {
   }
 
   private Boolean hasActiveSubscriptions() {
+    /*
+     * TODO - hasActiveSubscription: this effectively looks at an internally managed list of channels and
+     * their associated subscriptions this whole concept should be enhanced to handle the heartbeat event and update the channels
+     * accordingly (heartbeat is produced every time a channel is subscribed). One potential implementation is to always first
+     * subscribe to heartbeat and blockwait for this to return before adding any other subscriptions.
+     */
     return !channels.isEmpty();
   }
 }

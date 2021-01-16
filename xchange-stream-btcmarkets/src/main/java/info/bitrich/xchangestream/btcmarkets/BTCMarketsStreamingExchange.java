@@ -1,5 +1,7 @@
 package info.bitrich.xchangestream.btcmarkets;
 
+import info.bitrich.xchangestream.btcmarkets.service.BTCMarketsStreamingMarketDataService;
+import info.bitrich.xchangestream.btcmarkets.service.BTCMarketsStreamingService;
 import info.bitrich.xchangestream.core.ProductSubscription;
 import info.bitrich.xchangestream.core.StreamingExchange;
 import info.bitrich.xchangestream.core.StreamingMarketDataService;
