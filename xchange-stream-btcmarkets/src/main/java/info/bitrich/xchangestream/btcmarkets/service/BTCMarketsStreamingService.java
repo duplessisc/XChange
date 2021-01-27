@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import info.bitrich.xchangestream.btcmarkets.dto.BTCMarketsWebSocketHeartbeatMessage;
 import info.bitrich.xchangestream.btcmarkets.dto.BTCMarketsWebSocketSubscriptionMessage;
 import info.bitrich.xchangestream.service.netty.JsonNettyStreamingService;
@@ -13,6 +12,7 @@ import io.reactivex.Observable;
 import java.io.IOException;
 import java.nio.channels.NonReadableChannelException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,14 +56,14 @@ public class BTCMarketsStreamingService extends JsonNettyStreamingService {
 
     // Create the first subscription message
     if (!hasActiveSubscriptions()) {
-      return BTCMarketsWebSocketSubscriptionMessage.getFirstSubcritionMessage(
+      return BTCMarketsWebSocketSubscriptionMessage.getFirstSubscritionMessage(
           marketIds == null ? null : Lists.newArrayList(marketIds),
           Lists.newArrayList(channelName, CHANNEL_HEARTBEAT),
           null,
           null,
           null);
     } else {
-      return BTCMarketsWebSocketSubscriptionMessage.getAddSubcritionMessage(
+      return BTCMarketsWebSocketSubscriptionMessage.getAddSubscritionMessage(
           Lists.newArrayList(marketIds), Lists.newArrayList(channelName), null, null, null);
     }
   }
@@ -96,7 +96,7 @@ public class BTCMarketsStreamingService extends JsonNettyStreamingService {
     if (publicChannels.contains(channelName)) {
 
       LOG.debug("Now subscribing to {}:{}", channelName, args);
-      Set<String> newMarketIds = Sets.newConcurrentHashSet();
+      Set<String> newMarketIds = new HashSet<String>();
       if (args != null) {
         for (Object marketId : args) {
           newMarketIds.add(marketId.toString());
