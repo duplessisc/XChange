@@ -80,11 +80,9 @@ public class BTCMarketsStreamingAdapters {
 
   private static OrderType getOrderType(String side) {
     OrderType orderType = null;
-
     if (side.compareToIgnoreCase("ask") == 0) orderType = OrderType.ASK;
     else if (side.compareToIgnoreCase("bid") == 0) orderType = OrderType.BID;
     else LOG.error("Trade side {} not recognised, set to null", side);
-
     return orderType;
   }
 
