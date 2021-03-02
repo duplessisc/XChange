@@ -1,11 +1,12 @@
-package info.bitrich.xchangestream.btcmarkets;
+package info.bitrich.xchangestream.btcmarkets.service;
 
-import static info.bitrich.xchangestream.btcmarkets.BTCMarketsStreamingService.CHANNEL_ORDERBOOK;
-import static info.bitrich.xchangestream.btcmarkets.BTCMarketsStreamingService.CHANNEL_TICKER;
-import static info.bitrich.xchangestream.btcmarkets.BTCMarketsStreamingService.CHANNEL_TRADE;
+import static info.bitrich.xchangestream.btcmarkets.service.BTCMarketsStreamingService.CHANNEL_ORDERBOOK;
+import static info.bitrich.xchangestream.btcmarkets.service.BTCMarketsStreamingService.CHANNEL_TICKER;
+import static info.bitrich.xchangestream.btcmarkets.service.BTCMarketsStreamingService.CHANNEL_TRADE;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import info.bitrich.xchangestream.btcmarkets.BTCMarketsStreamingAdapters;
 import info.bitrich.xchangestream.btcmarkets.dto.BTCMarketsWebSocketOrderbookMessage;
 import info.bitrich.xchangestream.btcmarkets.dto.BTCMarketsWebSocketTickerMessage;
 import info.bitrich.xchangestream.btcmarkets.dto.BTCMarketsWebSocketTradeMessage;
@@ -17,7 +18,7 @@ import org.knowm.xchange.dto.marketdata.OrderBook;
 import org.knowm.xchange.dto.marketdata.Ticker;
 import org.knowm.xchange.dto.marketdata.Trade;
 
-class BTCMarketsStreamingMarketDataService implements StreamingMarketDataService {
+public class BTCMarketsStreamingMarketDataService implements StreamingMarketDataService {
 
   private final ObjectMapper mapper = StreamingObjectMapperHelper.getObjectMapper();
 
