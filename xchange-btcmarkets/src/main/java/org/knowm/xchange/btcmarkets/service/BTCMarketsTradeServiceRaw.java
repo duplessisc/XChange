@@ -6,7 +6,11 @@ import java.util.List;
 import java.util.UUID;
 import org.knowm.xchange.Exchange;
 import org.knowm.xchange.btcmarkets.dto.BTCMarketsBaseResponse;
-import org.knowm.xchange.btcmarkets.dto.trade.*;
+import org.knowm.xchange.btcmarkets.dto.trade.BTCMarketsCancelOrderRequest;
+import org.knowm.xchange.btcmarkets.dto.trade.BTCMarketsOpenOrdersRequest;
+import org.knowm.xchange.btcmarkets.dto.trade.BTCMarketsOrder;
+import org.knowm.xchange.btcmarkets.dto.trade.BTCMarketsOrderDetailsRequest;
+import org.knowm.xchange.btcmarkets.dto.trade.BTCMarketsOrders;
 import org.knowm.xchange.btcmarkets.dto.v3.trade.BTCMarketsPlaceOrderRequest;
 import org.knowm.xchange.btcmarkets.dto.v3.trade.BTCMarketsPlaceOrderResponse;
 import org.knowm.xchange.btcmarkets.dto.v3.trade.BTCMarketsTradeHistoryResponse;
@@ -25,7 +29,8 @@ public class BTCMarketsTradeServiceRaw extends BTCMarketsBaseService {
       BTCMarketsOrder.Side side,
       BTCMarketsOrder.Type type,
       String timeInForce,
-      boolean postOnly)
+      boolean postOnly,
+      String clientOrderId)
       throws IOException {
     return btcmv3.placeOrder(
         exchange.getExchangeSpecification().getApiKey(),
@@ -42,7 +47,7 @@ public class BTCMarketsTradeServiceRaw extends BTCMarketsBaseService {
             timeInForce,
             postOnly,
             null,
-            null));
+            clientOrderId));
   }
 
   public BTCMarketsOrders getBTCMarketsOpenOrders(

@@ -44,6 +44,17 @@ public class DateUtils {
     return sd.format(date);
   }
 
+  public static String toUTCISODateString(Date date) {
+    SimpleDateFormat isoDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+    isoDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+    return isoDateFormat.format(date);
+  }
+
+  public static String toISODateString(Date date) {
+    SimpleDateFormat isoDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+    return isoDateFormat.format(date);
+  }
+
   /**
    * Converts an ISO formatted Date String to a Java Date ISO format: yyyy-MM-dd'T'HH:mm:ss.SSS'Z'
    *
@@ -156,5 +167,10 @@ public class DateUtils {
   /** Convert unix time to Java Date */
   public static Date fromUnixTime(long unix) {
     return new Date(unix * 1000);
+  }
+
+  /** Convert unix time with milliseconds to Java Date */
+  public static Date fromUnixTimeWithMilliseconds(long milliseconds) {
+    return new Date(milliseconds);
   }
 }

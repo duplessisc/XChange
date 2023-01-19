@@ -1,11 +1,23 @@
 package org.knowm.xchange.bittrex;
 
+import static org.knowm.xchange.bittrex.BittrexConstants.OFFLINE;
+import static org.knowm.xchange.bittrex.BittrexConstants.ONLINE;
+
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.knowm.xchange.bittrex.dto.account.BittrexBalance;
+import org.knowm.xchange.bittrex.dto.marketdata.BittrexCurrency;
 import org.knowm.xchange.bittrex.dto.marketdata.BittrexLevel;
 import org.knowm.xchange.bittrex.dto.marketdata.BittrexMarketSummary;
 import org.knowm.xchange.bittrex.dto.marketdata.BittrexSymbol;
@@ -17,14 +29,19 @@ import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.Order.OrderStatus;
 import org.knowm.xchange.dto.Order.OrderType;
 import org.knowm.xchange.dto.account.Balance;
+import org.knowm.xchange.dto.account.Fee;
 import org.knowm.xchange.dto.account.Wallet;
 import org.knowm.xchange.dto.marketdata.Ticker;
 import org.knowm.xchange.dto.marketdata.Trade;
 import org.knowm.xchange.dto.marketdata.Trades;
 import org.knowm.xchange.dto.marketdata.Trades.TradeSortType;
+import org.knowm.xchange.dto.meta.CurrencyMetaData;
 import org.knowm.xchange.dto.meta.ExchangeMetaData;
+import org.knowm.xchange.dto.meta.InstrumentMetaData;
+import org.knowm.xchange.dto.meta.WalletHealth;
 import org.knowm.xchange.dto.trade.LimitOrder;
 import org.knowm.xchange.dto.trade.UserTrade;
+import org.knowm.xchange.instrument.Instrument;
 
 public final class BittrexAdapters {
 
@@ -85,6 +102,9 @@ public final class BittrexAdapters {
   }
 
   public static OrderStatus adaptOrderStatus(BittrexOrder order) {
+    if (order.getClosedAt() != null) {
+      return OrderStatus.CLOSED;
+    }
     if (order.getQuantity() == null) {
       return OrderStatus.UNKNOWN;
     }
@@ -219,14 +239,62 @@ public final class BittrexAdapters {
     return Wallet.Builder.from(wallets).build();
   }
 
-  public static void adaptMetaData(List<BittrexSymbol> rawSymbols, ExchangeMetaData metaData) {
-    BittrexAdapters.adaptCurrencyPairs(rawSymbols)
-        .forEach(
-            currencyPair -> {
-              metaData.getCurrencyPairs().putIfAbsent(currencyPair, null);
-              metaData.getCurrencies().putIfAbsent(currencyPair.base, null);
-              metaData.getCurrencies().putIfAbsent(currencyPair.counter, null);
-            });
+  public static void adaptMetaData(
+      List<BittrexSymbol> rawSymbols,
+      List<BittrexCurrency> bittrexCurrencies,
+      Map<Instrument, Fee> dynamicTradingFees,
+      ExchangeMetaData metaData) {
+    List<CurrencyPair> currencyPairs = BittrexAdapters.adaptCurrencyPairs(rawSymbols);
+    for (CurrencyPair currencyPair : currencyPairs) {
+      InstrumentMetaData defaultCurrencyPairMetaData =
+          metaData.getInstruments().get(currencyPair);
+      BigDecimal resultingFee = null;
+      // Prioritize dynamic fee
+      if (dynamicTradingFees != null) {
+        Fee fee = dynamicTradingFees.get(currencyPair);
+        if (fee != null) {
+          resultingFee = fee.getMakerFee();
+        }
+      } else {
+        if (defaultCurrencyPairMetaData != null) {
+          resultingFee = defaultCurrencyPairMetaData.getTradingFee();
+        }
+      }
+
+      InstrumentMetaData newCurrencyPairMetaData;
+      if (defaultCurrencyPairMetaData != null) {
+        newCurrencyPairMetaData =
+                new InstrumentMetaData.Builder()
+                        .tradingFee(resultingFee)
+                        .minimumAmount(defaultCurrencyPairMetaData.getMinimumAmount())
+                        .maximumAmount(defaultCurrencyPairMetaData.getMaximumAmount())
+                        .priceScale(defaultCurrencyPairMetaData.getPriceScale())
+                        .volumeScale(defaultCurrencyPairMetaData.getVolumeScale())
+                        .feeTiers(defaultCurrencyPairMetaData.getFeeTiers())
+                        .tradingFeeCurrency(defaultCurrencyPairMetaData.getTradingFeeCurrency())
+                        .build();
+      } else {
+        newCurrencyPairMetaData =
+                new InstrumentMetaData.Builder().tradingFee(resultingFee).build();
+      }
+
+      metaData.getInstruments().put(currencyPair, newCurrencyPairMetaData);
+    }
+
+    for (BittrexCurrency bittrexCurrency : bittrexCurrencies) {
+      WalletHealth walletHealth = WalletHealth.UNKNOWN;
+      if (ONLINE.equals(bittrexCurrency.getStatus())) {
+        walletHealth = WalletHealth.ONLINE;
+      } else if (OFFLINE.equals(bittrexCurrency.getStatus())) {
+        walletHealth = WalletHealth.OFFLINE;
+      }
+      metaData
+          .getCurrencies()
+          .put(
+              bittrexCurrency.getSymbol(),
+              new CurrencyMetaData(
+                  1, BigDecimal.valueOf(bittrexCurrency.getTxFee()), null, walletHealth));
+    }
   }
 
   private BittrexAdapters() {

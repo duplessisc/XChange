@@ -2,7 +2,13 @@ package org.knowm.xchange.btcmarkets;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.knowm.xchange.btcmarkets.dto.account.BTCMarketsBalance;
 import org.knowm.xchange.btcmarkets.dto.account.BTCMarketsFundtransfer;
@@ -12,6 +18,7 @@ import org.knowm.xchange.btcmarkets.dto.marketdata.BTCMarketsTicker;
 import org.knowm.xchange.btcmarkets.dto.trade.BTCMarketsOrder;
 import org.knowm.xchange.btcmarkets.dto.trade.BTCMarketsOrders;
 import org.knowm.xchange.btcmarkets.dto.trade.BTCMarketsUserTrade;
+import org.knowm.xchange.btcmarkets.dto.v3.account.BTCMarketsAccountBalanceResponse;
 import org.knowm.xchange.btcmarkets.dto.v3.marketdata.BTCMarketsTrade;
 import org.knowm.xchange.btcmarkets.dto.v3.trade.BTCMarketsTradeHistoryResponse;
 import org.knowm.xchange.currency.Currency;
@@ -67,6 +74,10 @@ public final class BTCMarketsAdapters {
 
   private BTCMarketsAdapters() {}
 
+  @Deprecated 
+  /*
+   * Replaced by  v3 call
+   */
   public static Wallet adaptWallet(List<BTCMarketsBalance> balances) {
     List<Balance> wallets = new ArrayList<>(balances.size());
     for (BTCMarketsBalance blc : balances) {
@@ -75,6 +86,15 @@ public final class BTCMarketsAdapters {
     }
     return Wallet.Builder.from(wallets).build();
   }
+  
+  public static Wallet adaptWalletV3(List<BTCMarketsAccountBalanceResponse> balances) {
+	    List<Balance> wallets = new ArrayList<>(balances.size());
+	    for (BTCMarketsAccountBalanceResponse blc : balances) {
+	      final Currency currency = Currency.getInstance(blc.getAssetName());
+	      wallets.add(new Balance(currency, blc.getBalance(), blc.getAvailable(), blc.getLocked()));
+	    }
+	    return Wallet.Builder.from(wallets).build();
+	  }
 
   public static OrderBook adaptOrderBook(
       BTCMarketsOrderBook btcmarketsOrderBook, CurrencyPair currencyPair) {
@@ -118,17 +138,18 @@ public final class BTCMarketsAdapters {
     BigDecimal cumulativeAmount =
         BigDecimal.valueOf(
             o.getTrades().stream().mapToDouble(value -> value.getVolume().doubleValue()).sum());
-    return new LimitOrder(
-        adaptOrderType(o.getOrderSide()),
-        o.getVolume(),
-        new CurrencyPair(o.getInstrument(), o.getCurrency()),
-        Long.toString(o.getId()),
-        o.getCreationTime(),
-        o.getPrice(),
-        averagePrice,
-        cumulativeAmount,
-        fee,
-        adaptOrderStatus(o.getStatus()));
+    return new LimitOrder.Builder(
+            adaptOrderType(o.getOrderSide()), new CurrencyPair(o.getInstrument(), o.getCurrency()))
+        .originalAmount(o.getVolume())
+        .id(Long.toString(o.getId()))
+        .timestamp(o.getCreationTime())
+        .limitPrice(o.getPrice())
+        .averagePrice(averagePrice)
+        .cumulativeAmount(cumulativeAmount)
+        .fee(fee)
+        .orderStatus(adaptOrderStatus(o.getStatus()))
+        .userReference(o.getClientRequestId())
+        .build();
   }
 
   public static UserTrades adaptTradeHistory(

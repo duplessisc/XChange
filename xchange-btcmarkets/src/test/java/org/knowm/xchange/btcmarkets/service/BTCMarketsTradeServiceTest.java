@@ -5,7 +5,11 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
 import org.junit.Test;
 import org.knowm.xchange.btcmarkets.dto.BTCMarketsException;
 import org.knowm.xchange.btcmarkets.dto.BTCMarketsOrderFlags;
@@ -28,7 +32,9 @@ public class BTCMarketsTradeServiceTest extends BTCMarketsServiceTest {
   @Test
   public void shouldPlaceMarketOrder() throws IOException {
     MarketOrder marketOrder =
-        new MarketOrder(Order.OrderType.BID, new BigDecimal("10.00000000"), CurrencyPair.BTC_AUD);
+        new MarketOrder.Builder(Order.OrderType.BID, CurrencyPair.BTC_AUD)
+            .originalAmount(new BigDecimal("10.00000000"))
+            .build();
 
     BTCMarketsPlaceOrderRequest btcMarketsOrder =
         new BTCMarketsPlaceOrderRequest(
@@ -54,15 +60,14 @@ public class BTCMarketsTradeServiceTest extends BTCMarketsServiceTest {
   public void shouldPlaceLimitOrder() throws IOException {
     // given
     LimitOrder limitOrder =
-        new LimitOrder(
-            Order.OrderType.ASK,
-            new BigDecimal("10.00000000"),
-            CurrencyPair.BTC_AUD,
-            "11111",
-            new Date(1234567890L),
-            new BigDecimal("20.00000000"));
+        new LimitOrder.Builder(Order.OrderType.ASK, CurrencyPair.BTC_AUD)
+            .limitPrice(new BigDecimal("20.00000000"))
+            .originalAmount(new BigDecimal("10.00000000"))
+            .id("11111")
+            .timestamp(new Date(1234567890L))
+            .build();
 
-    BTCMarketsPlaceOrderRequest request =
+    BTCMarketsPlaceOrderRequest expectedRequest =
         new BTCMarketsPlaceOrderRequest(
             "BTC-AUD",
             "20.00000000",
@@ -82,7 +87,49 @@ public class BTCMarketsTradeServiceTest extends BTCMarketsServiceTest {
             Mockito.eq(SPECIFICATION_API_KEY),
             Mockito.any(SynchronizedValueFactory.class),
             Mockito.any(BTCMarketsDigestV3.class),
-            Mockito.refEq(request)))
+            Mockito.refEq(expectedRequest)))
+        .thenReturn(orderResponse);
+
+    // when
+    String placed = btcMarketsTradeService.placeLimitOrder(limitOrder);
+
+    // then
+    assertThat(placed).isEqualTo("11111");
+  }
+
+  @Test
+  public void shouldPlaceLimitOrderWithUserReference() throws IOException {
+    // given
+    LimitOrder limitOrder =
+        new LimitOrder.Builder(Order.OrderType.ASK, CurrencyPair.BTC_AUD)
+            .limitPrice(new BigDecimal("20.00000000"))
+            .originalAmount(new BigDecimal("10.00000000"))
+            .id("11111")
+            .timestamp(new Date(1234567890L))
+            .userReference("testOrder")
+            .build();
+
+    BTCMarketsPlaceOrderRequest expectedRequest =
+        new BTCMarketsPlaceOrderRequest(
+            "BTC-AUD",
+            "20.00000000",
+            "10.00000000",
+            "Limit",
+            "Ask",
+            null,
+            null,
+            "GTC",
+            false,
+            null,
+            "testOrder");
+
+    BTCMarketsPlaceOrderResponse orderResponse = new BTCMarketsPlaceOrderResponse("11111");
+
+    when(btcMarketsAuthenticatedV3.placeOrder(
+            Mockito.eq(SPECIFICATION_API_KEY),
+            Mockito.any(SynchronizedValueFactory.class),
+            Mockito.any(BTCMarketsDigestV3.class),
+            Mockito.refEq(expectedRequest)))
         .thenReturn(orderResponse);
 
     // when
@@ -96,14 +143,13 @@ public class BTCMarketsTradeServiceTest extends BTCMarketsServiceTest {
   public void shouldPlaceLimitOrderWithPostOnlyFlag() throws IOException {
     // given
     LimitOrder limitOrder =
-        new LimitOrder(
-            Order.OrderType.ASK,
-            new BigDecimal("10.00000000"),
-            CurrencyPair.BTC_AUD,
-            "11111",
-            new Date(1234567890L),
-            new BigDecimal("20.00000000"));
-    limitOrder.getOrderFlags().add(BTCMarketsOrderFlags.POST_ONLY);
+        new LimitOrder.Builder(Order.OrderType.ASK, CurrencyPair.BTC_AUD)
+            .limitPrice(new BigDecimal("20.00000000"))
+            .originalAmount(new BigDecimal("10.00000000"))
+            .id("11111")
+            .timestamp(new Date(1234567890L))
+            .flag(BTCMarketsOrderFlags.POST_ONLY)
+            .build();
 
     BTCMarketsPlaceOrderRequest expectedRequest =
         new BTCMarketsPlaceOrderRequest(

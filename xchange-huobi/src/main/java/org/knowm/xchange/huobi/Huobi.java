@@ -23,7 +23,9 @@ import org.knowm.xchange.huobi.dto.account.results.HuobiWithdrawFeeRangeResult;
 import org.knowm.xchange.huobi.dto.marketdata.results.HuobiAllTickersResult;
 import org.knowm.xchange.huobi.dto.marketdata.results.HuobiAssetPairsResult;
 import org.knowm.xchange.huobi.dto.marketdata.results.HuobiAssetsResult;
+import org.knowm.xchange.huobi.dto.marketdata.results.HuobiCurrenciesResult;
 import org.knowm.xchange.huobi.dto.marketdata.results.HuobiDepthResult;
+import org.knowm.xchange.huobi.dto.marketdata.results.HuobiKlinesResult;
 import org.knowm.xchange.huobi.dto.marketdata.results.HuobiTickerResult;
 import org.knowm.xchange.huobi.dto.marketdata.results.HuobiTradesResult;
 import org.knowm.xchange.huobi.dto.trade.HuobiCreateOrderRequest;
@@ -57,6 +59,14 @@ public interface Huobi {
       throws IOException;
 
   @GET
+  @Path("market/history/kline")
+  HuobiKlinesResult getKlines(
+      @QueryParam("symbol") String symbol,
+      @QueryParam("period") String period,
+      @QueryParam("size") int size)
+      throws IOException;
+
+  @GET
   @Path("v1/common/symbols")
   HuobiAssetPairsResult getAssetPairs() throws IOException;
 
@@ -68,6 +78,18 @@ public interface Huobi {
   @Path("v1/fee/fee-rate/get")
   HuobiFeeRateResult getFeeRate(
       @QueryParam("symbols") String symbols,
+      @QueryParam("AccessKeyId") String apiKey,
+      @QueryParam("SignatureMethod") String signatureMethod,
+      @QueryParam("SignatureVersion") int signatureVersion,
+      @QueryParam("Timestamp") String nonce,
+      @QueryParam("Signature") ParamsDigest signature)
+      throws IOException;
+
+  @GET
+  @Path("v2/reference/currencies")
+  HuobiCurrenciesResult getCurrencies(
+      @QueryParam("currency") String currency,
+      @QueryParam("authorizedUser") boolean authorizedUser,
       @QueryParam("AccessKeyId") String apiKey,
       @QueryParam("SignatureMethod") String signatureMethod,
       @QueryParam("SignatureVersion") int signatureVersion,

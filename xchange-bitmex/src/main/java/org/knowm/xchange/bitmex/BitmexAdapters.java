@@ -2,12 +2,25 @@ package org.knowm.xchange.bitmex;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import org.knowm.xchange.bitmex.dto.account.BitmexTicker;
 import org.knowm.xchange.bitmex.dto.account.BitmexWalletTransaction;
-import org.knowm.xchange.bitmex.dto.marketdata.*;
-import org.knowm.xchange.bitmex.dto.trade.*;
+import org.knowm.xchange.bitmex.dto.marketdata.BitmexDepth;
+import org.knowm.xchange.bitmex.dto.marketdata.BitmexPrivateOrder;
+import org.knowm.xchange.bitmex.dto.marketdata.BitmexPublicOrder;
+import org.knowm.xchange.bitmex.dto.marketdata.BitmexPublicOrderList;
+import org.knowm.xchange.bitmex.dto.marketdata.BitmexPublicTrade;
+import org.knowm.xchange.bitmex.dto.trade.BitmexOrder;
+import org.knowm.xchange.bitmex.dto.trade.BitmexOrderDescription;
+import org.knowm.xchange.bitmex.dto.trade.BitmexOrderResponse;
+import org.knowm.xchange.bitmex.dto.trade.BitmexOrderStatus;
+import org.knowm.xchange.bitmex.dto.trade.BitmexPrivateExecution;
+import org.knowm.xchange.bitmex.dto.trade.BitmexSide;
 import org.knowm.xchange.currency.Currency;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.Order.OrderStatus;
@@ -20,7 +33,7 @@ import org.knowm.xchange.dto.marketdata.Ticker;
 import org.knowm.xchange.dto.marketdata.Trade;
 import org.knowm.xchange.dto.marketdata.Trades;
 import org.knowm.xchange.dto.marketdata.Trades.TradeSortType;
-import org.knowm.xchange.dto.meta.CurrencyPairMetaData;
+import org.knowm.xchange.dto.meta.InstrumentMetaData;
 import org.knowm.xchange.dto.trade.LimitOrder;
 import org.knowm.xchange.dto.trade.OpenOrders;
 import org.knowm.xchange.dto.trade.UserTrade;
@@ -219,23 +232,22 @@ public class BitmexAdapters {
     return (orderIds == null || orderIds.isEmpty()) ? "" : orderIds.get(0);
   }
 
-  private static CurrencyPairMetaData adaptPair(
-      BitmexTicker ticker, CurrencyPairMetaData originalMeta) {
+  private static InstrumentMetaData adaptPair(
+      BitmexTicker ticker, InstrumentMetaData originalMeta) {
 
     if (originalMeta != null) {
-      return new CurrencyPairMetaData(
-          ticker.getTakerFee(),
-          originalMeta.getMinimumAmount(),
-          originalMeta.getMaximumAmount(),
-          Math.max(0, ticker.getTickSize().stripTrailingZeros().scale()),
-          originalMeta.getFeeTiers());
+      return new InstrumentMetaData.Builder()
+              .tradingFee(ticker.getTakerFee())
+              .minimumAmount(originalMeta.getMinimumAmount())
+              .maximumAmount(originalMeta.getMaximumAmount())
+              .priceScale(Math.max(0, ticker.getTickSize().stripTrailingZeros().scale()))
+              .feeTiers(originalMeta.getFeeTiers())
+              .build();
     } else {
-      return new CurrencyPairMetaData(
-          ticker.getTakerFee(),
-          null,
-          null,
-          Math.max(0, ticker.getTickSize().stripTrailingZeros().scale()),
-          null);
+      return new InstrumentMetaData.Builder()
+              .tradingFee(ticker.getTakerFee())
+              .priceScale(Math.max(0, ticker.getTickSize().stripTrailingZeros().scale()))
+              .build();
     }
   }
 
