@@ -1,18 +1,22 @@
 package info.bitrich.xchangestream.lgo;
 
-import java.io.*;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
-import org.junit.*;
+import java.util.Collections;
+import java.util.Date;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.knowm.xchange.ExchangeSpecification;
-import org.knowm.xchange.currency.*;
 import org.knowm.xchange.currency.Currency;
+import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.Order;
-import org.knowm.xchange.dto.trade.*;
+import org.knowm.xchange.dto.trade.LimitOrder;
+import org.knowm.xchange.dto.trade.MarketOrder;
 import org.knowm.xchange.lgo.LgoEnv;
 
 @Ignore
@@ -126,7 +130,7 @@ public class LgoStreamingExchangeExample {
                     null,
                     new Date(),
                     new BigDecimal("12000")));
-    System.out.println("Order was placed with reference: " + ref);
+//    System.out.println("Order was placed with reference: " + ref);
   }
 
   @Test
@@ -141,7 +145,7 @@ public class LgoStreamingExchangeExample {
                     CurrencyPair.BTC_USD,
                     null,
                     new Date()));
-    System.out.println("Order was placed with reference: " + ref);
+//    System.out.println("Order was placed with reference: " + ref);
   }
 
   @Test

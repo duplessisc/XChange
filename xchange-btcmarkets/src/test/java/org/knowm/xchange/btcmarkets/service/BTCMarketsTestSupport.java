@@ -44,7 +44,8 @@ public class BTCMarketsTestSupport extends BTCMarketsDtoTestSupport {
   protected static final Balance EXPECTED_BALANCE =
       new Balance(Currency.BTC, new BigDecimal("3.0E-7"), new BigDecimal("2.0E-7"));
   protected static final Balance EXPECTED_BALANCE_V3 =
-	      new Balance(Currency.LTC, new BigDecimal("5.123"), new BigDecimal("5.123"), new BigDecimal("0.000"));
+      new Balance(
+          Currency.LTC, new BigDecimal("5.123"), new BigDecimal("5.123"), new BigDecimal("0.000"));
   protected static final Ticker EXPECTED_TICKER =
       new Ticker.Builder()
           .bid(new BigDecimal("137.00"))
@@ -61,40 +62,36 @@ public class BTCMarketsTestSupport extends BTCMarketsDtoTestSupport {
           "AUD",
           "BTC",
           new Date(1378878117000L));
-  
+
   protected static final List<BTCMarketsTrade> EXCPECTED_BTC_AUD_MARKET_TRADES =
-		  
+      Arrays.asList(
+          new BTCMarketsTrade(
+              Long.parseLong("4107372347"),
+              new BigDecimal("0.265"),
+              new BigDecimal("11.25"),
+              parseISO8601Date("2019-09-02T12:49:42.874000Z"),
+              "Ask"),
+          new BTCMarketsTrade(
+              Long.parseLong("4107297908"),
+              new BigDecimal("0.265"),
+              new BigDecimal("250"),
+              parseISO8601Date("2019-09-02T12:15:29.570000Z"),
+              "Bid"));
 
-		 Arrays.asList(
-			  new BTCMarketsTrade(
-				   Long.parseLong("4107372347"),
-				  new BigDecimal("0.265"),
-				  new BigDecimal("11.25"),
-				  parseISO8601Date("2019-09-02T12:49:42.874000Z"), 
-				  "Ask"	              ), 
-			  new BTCMarketsTrade(
-					  Long.parseLong("4107297908"),
-					  new BigDecimal("0.265"),
-					  new BigDecimal("250"),
-					  parseISO8601Date("2019-09-02T12:15:29.570000Z"), 
-					  "Bid"	  )            
-    	            );
-  
-  protected static final Date parseISO8601Date(String isoDate)  {
-	  
-	  SimpleDateFormat iso8601Format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-	    // set UTC time zone
-	    iso8601Format.setTimeZone(TimeZone.getTimeZone("UTC"));
-	      try {
-			return iso8601Format.parse(isoDate);
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;
+  protected static final Date parseISO8601Date(String isoDate) {
 
+    SimpleDateFormat iso8601Format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+    // set UTC time zone
+    iso8601Format.setTimeZone(TimeZone.getTimeZone("UTC"));
+    try {
+      return iso8601Format.parse(isoDate);
+    } catch (ParseException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    return null;
   }
-  
+
   protected static LimitOrder[] expectedAsks() {
     return new LimitOrder[] {
       new LimitOrder(
@@ -330,7 +327,7 @@ public class BTCMarketsTestSupport extends BTCMarketsDtoTestSupport {
           "BTC",
           BTCMarketsOrder.Side.Bid,
           BTCMarketsOrder.Type.Limit,
-          null,
+          "orderOne",
           new Date(1378862733366L),
           "Placed",
           null,

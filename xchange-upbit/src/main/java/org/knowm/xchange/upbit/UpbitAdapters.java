@@ -2,7 +2,12 @@ package org.knowm.xchange.upbit;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.knowm.xchange.currency.Currency;
@@ -15,11 +20,19 @@ import org.knowm.xchange.dto.marketdata.OrderBook;
 import org.knowm.xchange.dto.marketdata.Ticker;
 import org.knowm.xchange.dto.marketdata.Trade;
 import org.knowm.xchange.dto.marketdata.Trades;
-import org.knowm.xchange.dto.meta.CurrencyPairMetaData;
 import org.knowm.xchange.dto.meta.ExchangeMetaData;
+import org.knowm.xchange.dto.meta.InstrumentMetaData;
 import org.knowm.xchange.dto.trade.LimitOrder;
+import org.knowm.xchange.instrument.Instrument;
 import org.knowm.xchange.upbit.dto.account.UpbitBalances;
-import org.knowm.xchange.upbit.dto.marketdata.*;
+import org.knowm.xchange.upbit.dto.marketdata.UpbitMarket;
+import org.knowm.xchange.upbit.dto.marketdata.UpbitOrderBook;
+import org.knowm.xchange.upbit.dto.marketdata.UpbitOrderBookData;
+import org.knowm.xchange.upbit.dto.marketdata.UpbitOrderBooks;
+import org.knowm.xchange.upbit.dto.marketdata.UpbitTicker;
+import org.knowm.xchange.upbit.dto.marketdata.UpbitTickers;
+import org.knowm.xchange.upbit.dto.marketdata.UpbitTrade;
+import org.knowm.xchange.upbit.dto.marketdata.UpbitTrades;
 import org.knowm.xchange.upbit.dto.trade.UpbitOrderResponse;
 import org.knowm.xchange.utils.DateUtils;
 
@@ -116,13 +129,11 @@ public final class UpbitAdapters {
     List<Balance> balances = new ArrayList<>();
     Arrays.stream(wallets.getBalances())
         .forEach(
-            balance -> {
-              balances.add(
-                  new Balance(
-                      Currency.getInstance(balance.getCurrency()),
-                      balance.getBalance().add(balance.getLocked()),
-                      balance.getBalance()));
-            });
+            balance -> balances.add(
+                new Balance(
+                    Currency.getInstance(balance.getCurrency()),
+                    balance.getBalance().add(balance.getLocked()),
+                    balance.getBalance())));
     return Wallet.Builder.from(balances).build();
   }
 
@@ -155,13 +166,13 @@ public final class UpbitAdapters {
   }
 
   public static ExchangeMetaData adaptMetadata(List<UpbitMarket> markets) {
-    Map<CurrencyPair, CurrencyPairMetaData> pairMeta =
+    Map<Instrument, InstrumentMetaData> pairMeta =
         markets.stream()
             .map(UpbitMarket::getMarket)
             .map(UpbitUtils::toCurrencyPair)
             .collect(
                 Collectors.toMap(
-                    Function.identity(), cp -> new CurrencyPairMetaData.Builder().build()));
+                    Function.identity(), cp -> new InstrumentMetaData.Builder().build()));
     return new ExchangeMetaData(pairMeta, null, null, null, null);
   }
 }

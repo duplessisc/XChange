@@ -20,10 +20,12 @@ import org.knowm.xchange.service.trade.params.TradeHistoryParamsIdSpan;
 import org.knowm.xchange.service.trade.params.TradeHistoryParamsTimeSpan;
 import org.knowm.xchange.service.trade.params.orders.DefaultOpenOrdersParamCurrencyPair;
 import org.knowm.xchange.service.trade.params.orders.OpenOrdersParams;
+import org.knowm.xchange.service.trade.params.orders.OrderQueryParams;
 
 public class HuobiTradeService extends HuobiTradeServiceRaw implements TradeService {
   public static IOrderFlags FOK = new IOrderFlags() {};
   public static IOrderFlags IOC = new IOrderFlags() {};
+  public static IOrderFlags POST_ONLY = new IOrderFlags() {};
 
   public HuobiTradeService(Exchange exchange) {
     super(exchange);
@@ -55,13 +57,13 @@ public class HuobiTradeService extends HuobiTradeServiceRaw implements TradeServ
       startId = null;
     }
 
-    HuobiOrder[] openOrders = getHuobiTradeHistory(currencyPair, startDate, endDate, startId);
-    return HuobiAdapters.adaptTradeHistory(openOrders);
+    HuobiOrder[] tradeHistory = getHuobiTradeHistory(currencyPair, startDate, endDate, startId);
+    return HuobiAdapters.adaptTradeHistory(tradeHistory);
   }
 
   @Override
-  public Collection<Order> getOrder(String... orderIds) throws IOException {
-    return HuobiAdapters.adaptOrders(getHuobiOrder(orderIds));
+  public Collection<Order> getOrder(OrderQueryParams... orderQueryParams) throws IOException {
+    return HuobiAdapters.adaptOrders(getHuobiOrder(TradeService.toOrderIds(orderQueryParams)));
   }
 
   @Override

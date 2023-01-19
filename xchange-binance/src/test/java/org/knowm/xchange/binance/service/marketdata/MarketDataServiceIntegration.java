@@ -2,30 +2,26 @@ package org.knowm.xchange.binance.service.marketdata;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.knowm.xchange.ExchangeFactory;
-import org.knowm.xchange.binance.BinanceExchange;
+import org.knowm.xchange.binance.BinanceExchangeIntegration;
 import org.knowm.xchange.binance.dto.marketdata.BinanceTicker24h;
 import org.knowm.xchange.binance.service.BinanceMarketDataService;
 import org.knowm.xchange.currency.Currency;
-import org.knowm.xchange.currency.CurrencyPair;
+import org.knowm.xchange.instrument.Instrument;
 import org.knowm.xchange.service.marketdata.MarketDataService;
 
-public class MarketDataServiceIntegration {
+public class MarketDataServiceIntegration extends BinanceExchangeIntegration {
 
-  static BinanceExchange exchange;
   static MarketDataService marketService;
 
   @BeforeClass
-  public static void beforeClass() {
-    exchange = (BinanceExchange) ExchangeFactory.INSTANCE.createExchange(BinanceExchange.class);
+  public static void beforeClass() throws Exception {
+    createExchange();
     marketService = exchange.getMarketDataService();
   }
 
@@ -35,7 +31,7 @@ public class MarketDataServiceIntegration {
   }
 
   @Test
-  public void testTimestamp() throws Exception {
+  public void testTimestamp() {
 
     long serverTime = exchange.getTimestampFactory().createValue();
     Assert.assertTrue(0 < serverTime);
@@ -45,33 +41,25 @@ public class MarketDataServiceIntegration {
   public void testBinanceTicker24h() throws Exception {
 
     List<BinanceTicker24h> tickers = new ArrayList<>();
-    for (CurrencyPair cp : exchange.getExchangeMetaData().getCurrencyPairs().keySet()) {
-      if (cp.counter == Currency.USDT) {
+    for (Instrument cp : exchange.getExchangeMetaData().getInstruments().keySet()) {
+      if (cp.getCounter() == Currency.USDT) {
         tickers.add(getBinanceTicker24h(cp));
       }
     }
 
-    Collections.sort(
-        tickers,
-        new Comparator<BinanceTicker24h>() {
-          @Override
-          public int compare(BinanceTicker24h t1, BinanceTicker24h t2) {
-            return t2.getPriceChangePercent().compareTo(t1.getPriceChangePercent());
-          }
-        });
+    tickers.sort((BinanceTicker24h t1, BinanceTicker24h t2) ->
+            t2.getPriceChangePercent().compareTo(t1.getPriceChangePercent()));
 
-    tickers.stream()
+    tickers
         .forEach(
-            t -> {
-              System.out.println(
-                  t.getCurrencyPair()
-                      + " => "
-                      + String.format("%+.2f%%", t.getPriceChangePercent()));
-            });
+            t -> System.out.println(
+                t.getSymbol()
+                    + " => "
+                    + String.format("%+.2f%%", t.getPriceChangePercent())));
   }
 
-  private BinanceTicker24h getBinanceTicker24h(CurrencyPair pair) throws IOException {
+  private BinanceTicker24h getBinanceTicker24h(Instrument pair) throws IOException {
     BinanceMarketDataService service = (BinanceMarketDataService) marketService;
-    return service.ticker24h(pair);
+    return service.ticker24hAllProducts(pair);
   }
 }

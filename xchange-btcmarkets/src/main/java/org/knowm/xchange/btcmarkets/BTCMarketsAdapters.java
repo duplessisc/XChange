@@ -2,7 +2,13 @@ package org.knowm.xchange.btcmarkets;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.knowm.xchange.btcmarkets.dto.account.BTCMarketsBalance;
 import org.knowm.xchange.btcmarkets.dto.account.BTCMarketsFundtransfer;
@@ -132,17 +138,18 @@ public final class BTCMarketsAdapters {
     BigDecimal cumulativeAmount =
         BigDecimal.valueOf(
             o.getTrades().stream().mapToDouble(value -> value.getVolume().doubleValue()).sum());
-    return new LimitOrder(
-        adaptOrderType(o.getOrderSide()),
-        o.getVolume(),
-        new CurrencyPair(o.getInstrument(), o.getCurrency()),
-        Long.toString(o.getId()),
-        o.getCreationTime(),
-        o.getPrice(),
-        averagePrice,
-        cumulativeAmount,
-        fee,
-        adaptOrderStatus(o.getStatus()));
+    return new LimitOrder.Builder(
+            adaptOrderType(o.getOrderSide()), new CurrencyPair(o.getInstrument(), o.getCurrency()))
+        .originalAmount(o.getVolume())
+        .id(Long.toString(o.getId()))
+        .timestamp(o.getCreationTime())
+        .limitPrice(o.getPrice())
+        .averagePrice(averagePrice)
+        .cumulativeAmount(cumulativeAmount)
+        .fee(fee)
+        .orderStatus(adaptOrderStatus(o.getStatus()))
+        .userReference(o.getClientRequestId())
+        .build();
   }
 
   public static UserTrades adaptTradeHistory(

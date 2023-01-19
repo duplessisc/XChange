@@ -4,7 +4,13 @@ import static org.apache.commons.lang3.StringUtils.join;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.knowm.xchange.Exchange;
 import org.knowm.xchange.currency.Currency;
 import org.knowm.xchange.currency.CurrencyPair;
@@ -14,9 +20,10 @@ import org.knowm.xchange.dto.marketdata.Ticker;
 import org.knowm.xchange.dto.marketdata.Trade;
 import org.knowm.xchange.dto.marketdata.Trades;
 import org.knowm.xchange.dto.meta.CurrencyMetaData;
-import org.knowm.xchange.dto.meta.CurrencyPairMetaData;
 import org.knowm.xchange.dto.meta.ExchangeMetaData;
+import org.knowm.xchange.dto.meta.InstrumentMetaData;
 import org.knowm.xchange.dto.trade.LimitOrder;
+import org.knowm.xchange.instrument.Instrument;
 
 public class ExmoMarketDataServiceRaw extends BaseExmoService {
   protected ExmoMarketDataServiceRaw(Exchange exchange) {
@@ -52,7 +59,7 @@ public class ExmoMarketDataServiceRaw extends BaseExmoService {
   }
 
   public void updateMetadata(ExchangeMetaData exchangeMetaData) throws IOException {
-    Map<CurrencyPair, CurrencyPairMetaData> currencyPairs = exchangeMetaData.getCurrencyPairs();
+    Map<Instrument, InstrumentMetaData> currencyPairs = exchangeMetaData.getInstruments();
     Map<Currency, CurrencyMetaData> currencies = exchangeMetaData.getCurrencies();
 
     Map<String, Map<String, String>> map = exmo.pairSettings();
@@ -68,17 +75,15 @@ public class ExmoMarketDataServiceRaw extends BaseExmoService {
         tradingFee = currencyPairs.get(currencyPair).getTradingFee();
       }
 
-      CurrencyPairMetaData staticMeta = currencyPairs.get(currencyPair);
+      InstrumentMetaData staticMeta = currencyPairs.get(currencyPair);
       // min_quantity or min_amount ???
-      CurrencyPairMetaData currencyPairMetaData =
-          new CurrencyPairMetaData(
-              tradingFee,
-              new BigDecimal(data.get("min_quantity")),
-              new BigDecimal(data.get("max_quantity")),
-              priceScale,
-              staticMeta != null ? staticMeta.getFeeTiers() : null);
-
-      currencyPairs.put(currencyPair, currencyPairMetaData);
+      currencyPairs.put(currencyPair, new InstrumentMetaData.Builder()
+                      .tradingFee(tradingFee)
+                      .minimumAmount(new BigDecimal(data.get("min_quantity")))
+                      .maximumAmount(new BigDecimal(data.get("max_quantity")))
+                      .priceScale(priceScale)
+                      .feeTiers(staticMeta != null ? staticMeta.getFeeTiers() : null)
+              .build());
 
       if (!currencies.containsKey(currencyPair.base))
         currencies.put(currencyPair.base, new CurrencyMetaData(8, null));

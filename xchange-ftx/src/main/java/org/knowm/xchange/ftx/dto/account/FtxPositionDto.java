@@ -1,8 +1,11 @@
 package org.knowm.xchange.ftx.dto.account;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
+import org.knowm.xchange.ftx.dto.trade.FtxOrderSide;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class FtxPositionDto {
 
   @JsonProperty("cost")
@@ -10,6 +13,9 @@ public class FtxPositionDto {
 
   @JsonProperty("entryPrice")
   private final BigDecimal entryPrice;
+
+  @JsonProperty("estimatedLiquidationPrice")
+  private final BigDecimal estimatedLiquidationPrice;
 
   @JsonProperty("future")
   private final String future;
@@ -36,7 +42,7 @@ public class FtxPositionDto {
   private final BigDecimal shortOrderSize;
 
   @JsonProperty("side")
-  private final String side;
+  private final FtxOrderSide side;
 
   @JsonProperty("size")
   private final BigDecimal size;
@@ -44,9 +50,28 @@ public class FtxPositionDto {
   @JsonProperty("unrealizedPnl")
   private final BigDecimal unrealizedPnl;
 
+  @JsonProperty("collateralUsed")
+  private final BigDecimal collateralUsed;
+
+  @JsonProperty("recentBreakEvenPrice")
+  private final BigDecimal recentBreakEvenPrice;
+
+  @JsonProperty("recentAverageOpenPrice")
+  private final BigDecimal recentAverageOpenPrice;
+
+  @JsonProperty("recentPnl")
+  private final BigDecimal recentPnl;
+
+  @JsonProperty("cumulativeBuySize")
+  private final BigDecimal cumulativeBuySize;
+
+  @JsonProperty("cumulativeSellSize")
+  private final BigDecimal cumulativeSellSize;
+
   public FtxPositionDto(
       @JsonProperty("cost") BigDecimal cost,
       @JsonProperty("entryPrice") BigDecimal entryPrice,
+      @JsonProperty("estimatedLiquidationPrice") BigDecimal estimatedLiquidationPrice,
       @JsonProperty("future") String future,
       @JsonProperty("initialMarginRequirement") BigDecimal initialMarginRequirement,
       @JsonProperty("longOrderSize") BigDecimal longOrderSize,
@@ -55,11 +80,18 @@ public class FtxPositionDto {
       @JsonProperty("openSize") BigDecimal openSize,
       @JsonProperty("realizedPnl") BigDecimal realizedPnl,
       @JsonProperty("shortOrderSize") BigDecimal shortOrderSize,
-      @JsonProperty("side") String side,
+      @JsonProperty("side") FtxOrderSide side,
       @JsonProperty("size") BigDecimal size,
-      @JsonProperty("unrealizedPnl") BigDecimal unrealizedPnl) {
+      @JsonProperty("unrealizedPnl") BigDecimal unrealizedPnl,
+      @JsonProperty("collateralUsed") BigDecimal collateralUsed,
+      @JsonProperty("recentBreakEvenPrice") BigDecimal recentBreakEvenPrice,
+      @JsonProperty("recentAverageOpenPrice") BigDecimal recentAverageOpenPrice,
+      @JsonProperty("recentPnl") BigDecimal recentPnl,
+      @JsonProperty("cumulativeBuySize") BigDecimal cumulativeBuySize,
+      @JsonProperty("cumulativeSellSize") BigDecimal cumulativeSellSize) {
     this.cost = cost;
     this.entryPrice = entryPrice;
+    this.estimatedLiquidationPrice = estimatedLiquidationPrice;
     this.future = future;
     this.initialMarginRequirement = initialMarginRequirement;
     this.longOrderSize = longOrderSize;
@@ -71,6 +103,12 @@ public class FtxPositionDto {
     this.side = side;
     this.size = size;
     this.unrealizedPnl = unrealizedPnl;
+    this.collateralUsed = collateralUsed;
+    this.recentBreakEvenPrice = recentBreakEvenPrice;
+    this.recentAverageOpenPrice = recentAverageOpenPrice;
+    this.recentPnl = recentPnl;
+    this.cumulativeBuySize = cumulativeBuySize;
+    this.cumulativeSellSize = cumulativeSellSize;
   }
 
   public BigDecimal getCost() {
@@ -79,6 +117,10 @@ public class FtxPositionDto {
 
   public BigDecimal getEntryPrice() {
     return entryPrice;
+  }
+
+  public BigDecimal getEstimatedLiquidationPrice() {
+    return estimatedLiquidationPrice;
   }
 
   public String getFuture() {
@@ -113,7 +155,7 @@ public class FtxPositionDto {
     return shortOrderSize;
   }
 
-  public String getSide() {
+  public FtxOrderSide getSide() {
     return side;
   }
 
@@ -125,6 +167,30 @@ public class FtxPositionDto {
     return unrealizedPnl;
   }
 
+  public BigDecimal getCollateralUsed() {
+    return collateralUsed;
+  }
+
+  public BigDecimal getRecentBreakEvenPrice() {
+    return recentBreakEvenPrice;
+  }
+
+  public BigDecimal getRecentAverageOpenPrice() {
+    return recentAverageOpenPrice;
+  }
+
+  public BigDecimal getRecentPnl() {
+    return recentPnl;
+  }
+
+  public BigDecimal getCumulativeBuySize() {
+    return cumulativeBuySize;
+  }
+
+  public BigDecimal getCumulativeSellSize() {
+    return cumulativeSellSize;
+  }
+
   @Override
   public String toString() {
     return "FtxPositionDto{"
@@ -132,6 +198,8 @@ public class FtxPositionDto {
         + cost
         + ", entryPrice="
         + entryPrice
+        + ", estimatedLiquidationPrice="
+        + estimatedLiquidationPrice
         + ", future='"
         + future
         + '\''
@@ -149,13 +217,24 @@ public class FtxPositionDto {
         + realizedPnl
         + ", shortOrderSize="
         + shortOrderSize
-        + ", side='"
+        + ", side="
         + side
-        + '\''
         + ", size="
         + size
         + ", unrealizedPnl="
         + unrealizedPnl
+        + ", collateralUsed="
+        + collateralUsed
+        + ", recentBreakEvenPrice="
+        + recentBreakEvenPrice
+        + ", recentAverageOpenPrice="
+        + recentAverageOpenPrice
+        + ", recentPnl="
+        + recentPnl
+        + ", cumulativeBuySize="
+        + cumulativeBuySize
+        + ", cumulativeSellSize="
+        + cumulativeSellSize
         + '}';
   }
 }

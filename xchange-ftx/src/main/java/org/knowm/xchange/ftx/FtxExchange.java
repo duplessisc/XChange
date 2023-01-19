@@ -6,18 +6,28 @@ import org.knowm.xchange.Exchange;
 import org.knowm.xchange.ExchangeSpecification;
 import org.knowm.xchange.exceptions.ExchangeException;
 import org.knowm.xchange.ftx.dto.marketdata.FtxMarketsDto;
-import org.knowm.xchange.ftx.service.*;
+import org.knowm.xchange.ftx.service.FtxAccountService;
+import org.knowm.xchange.ftx.service.FtxBorrowingServiceRaw;
+import org.knowm.xchange.ftx.service.FtxLendingServiceRaw;
+import org.knowm.xchange.ftx.service.FtxMarketDataService;
+import org.knowm.xchange.ftx.service.FtxMarketDataServiceRaw;
+import org.knowm.xchange.ftx.service.FtxTradeService;
 import org.knowm.xchange.service.account.AccountService;
 import org.knowm.xchange.service.marketdata.MarketDataService;
 import org.knowm.xchange.service.trade.TradeService;
 
 public class FtxExchange extends BaseExchange implements Exchange {
 
+  private FtxLendingServiceRaw lendingService;
+  private FtxBorrowingServiceRaw borrowingService;
+
   @Override
   protected void initServices() {
     this.marketDataService = new FtxMarketDataService(this);
     this.accountService = new FtxAccountService(this);
     this.tradeService = new FtxTradeService(this);
+    this.lendingService = new FtxLendingServiceRaw(this);
+    this.borrowingService = new FtxBorrowingServiceRaw(this);
   }
 
   @Override
@@ -54,5 +64,13 @@ public class FtxExchange extends BaseExchange implements Exchange {
   @Override
   public TradeService getTradeService() {
     return this.tradeService;
+  }
+
+  public FtxLendingServiceRaw getLendingService() {
+    return lendingService;
+  }
+
+  public FtxBorrowingServiceRaw getBorrowingService() {
+    return borrowingService;
   }
 }

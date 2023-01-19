@@ -7,13 +7,12 @@ import static org.knowm.xchange.coinbasepro.CoinbaseProExchange.Parameters.PARAM
 import static org.knowm.xchange.coinbasepro.CoinbaseProExchange.Parameters.PARAM_SANDBOX_PRIME_SSL_URI;
 import static org.knowm.xchange.coinbasepro.CoinbaseProExchange.Parameters.PARAM_SANDBOX_SSL_URI;
 import static org.knowm.xchange.coinbasepro.CoinbaseProExchange.Parameters.PARAM_USE_PRIME;
-import static org.knowm.xchange.coinbasepro.CoinbaseProExchange.Parameters.PARAM_USE_SANDBOX;
 
 import java.io.IOException;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import org.knowm.xchange.BaseExchange;
+import org.knowm.xchange.Exchange;
 import org.knowm.xchange.ExchangeSpecification;
+import org.knowm.xchange.client.ResilienceRegistries;
 import org.knowm.xchange.coinbasepro.dto.marketdata.CoinbaseProCurrency;
 import org.knowm.xchange.coinbasepro.dto.marketdata.CoinbaseProProduct;
 import org.knowm.xchange.coinbasepro.service.CoinbaseProAccountService;
@@ -24,12 +23,14 @@ import si.mazi.rescu.SynchronizedValueFactory;
 
 public class CoinbaseProExchange extends BaseExchange {
 
+  private static ResilienceRegistries RESILIENCE_REGISTRIES;
+
   /** Adjust host parameters depending on exchange specific parameters */
   private static void concludeHostParams(ExchangeSpecification exchangeSpecification) {
 
     if (exchangeSpecification.getExchangeSpecificParameters() != null) {
       final boolean useSandbox =
-          exchangeSpecification.getExchangeSpecificParametersItem(PARAM_USE_SANDBOX).equals(true);
+          exchangeSpecification.getExchangeSpecificParametersItem(USE_SANDBOX).equals(true);
       final boolean usePrime =
           Boolean.TRUE.equals(
               exchangeSpecification.getExchangeSpecificParametersItem(PARAM_USE_PRIME));
@@ -72,9 +73,9 @@ public class CoinbaseProExchange extends BaseExchange {
 
     concludeHostParams(exchangeSpecification);
 
-    this.marketDataService = new CoinbaseProMarketDataService(this);
-    this.accountService = new CoinbaseProAccountService(this);
-    this.tradeService = new CoinbaseProTradeService(this);
+    this.marketDataService = new CoinbaseProMarketDataService(this, getResilienceRegistries());
+    this.accountService = new CoinbaseProAccountService(this, getResilienceRegistries());
+    this.tradeService = new CoinbaseProTradeService(this, getResilienceRegistries());
   }
 
   @Override
@@ -88,19 +89,19 @@ public class CoinbaseProExchange extends BaseExchange {
     exchangeSpecification.setExchangeDescription(
         "CoinbasePro Exchange is a Bitcoin exchange, re-branded from GDAX in 2018");
 
-    exchangeSpecification.setExchangeSpecificParametersItem(PARAM_USE_SANDBOX, false);
+    exchangeSpecification.setExchangeSpecificParametersItem(Exchange.USE_SANDBOX, false);
     exchangeSpecification.setExchangeSpecificParametersItem(
         PARAM_SANDBOX_SSL_URI, "https://api-public.sandbox.pro.coinbase.com");
     exchangeSpecification.setExchangeSpecificParametersItem(
         PARAM_SANDBOX_HOST, "api-public.sandbox.pro.coinbase.com");
     exchangeSpecification.setExchangeSpecificParametersItem(
-        PARAM_PRIME_SSL_URI, "https://api.prime.coinbase.com");
+        PARAM_PRIME_SSL_URI, "https://api.exchange.coinbase.com");
     exchangeSpecification.setExchangeSpecificParametersItem(
-        PARAM_PRIME_HOST, "api.prime.coinbase.com");
+        PARAM_PRIME_HOST, "api.exchange.coinbase.com");
     exchangeSpecification.setExchangeSpecificParametersItem(
-        PARAM_SANDBOX_PRIME_SSL_URI, "https://api-public.sandbox.prime.coinbase.com");
+        PARAM_SANDBOX_PRIME_SSL_URI, "https://api-public.sandbox.exchange.coinbase.com");
     exchangeSpecification.setExchangeSpecificParametersItem(
-        PARAM_SANDBOX_PRIME_HOST, "api-public.sandbox.prime.coinbase.com");
+        PARAM_SANDBOX_PRIME_HOST, "api-public.sandbox.exchange.coinbase.com");
 
     return exchangeSpecification;
   }
@@ -108,6 +109,14 @@ public class CoinbaseProExchange extends BaseExchange {
   @Override
   public SynchronizedValueFactory<Long> getNonceFactory() {
     throw new UnsupportedOperationException("CoinbasePro uses timestamp rather than a nonce");
+  }
+
+  @Override
+  public ResilienceRegistries getResilienceRegistries() {
+    if (RESILIENCE_REGISTRIES == null) {
+      RESILIENCE_REGISTRIES = CoinbaseProResilience.createRegistries();
+    }
+    return RESILIENCE_REGISTRIES;
   }
 
   @Override
@@ -120,9 +129,9 @@ public class CoinbaseProExchange extends BaseExchange {
         CoinbaseProAdapters.adaptToExchangeMetaData(exchangeMetaData, products, currencies);
   }
 
-  @NoArgsConstructor(access = AccessLevel.PRIVATE)
+  // @NoArgsConstructor(access = AccessLevel.PRIVATE)
+  // TODO: I don't know why this fails with `mvn install` yet
   public static final class Parameters {
-    public static final String PARAM_USE_SANDBOX = "Use_Sandbox";
     public static final String PARAM_SANDBOX_SSL_URI = "SandboxSslUri";
     public static final String PARAM_SANDBOX_HOST = "SandboxHost";
     public static final String PARAM_USE_PRIME = "Use_Prime";

@@ -3,28 +3,35 @@ package org.knowm.xchange.dto.meta;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Map;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import lombok.Getter;
+import lombok.ToString;
 import org.knowm.xchange.currency.Currency;
-import org.knowm.xchange.currency.CurrencyPair;
+import org.knowm.xchange.instrument.Instrument;
 import org.knowm.xchange.utils.ObjectMapperHelper;
+import org.knowm.xchange.utils.jackson.InstrumentMapDeserializer;
 
 /**
  * This class is loaded during creation of the Exchange and is intended to hold both data that is
  * readily available from an HTTP API request at an exchange extended by semi-static data that is
  * not available from an HTTP API, but is still important information to have. Examples include
  * currency pairs, max polling rates, scaling factors, etc. For more info see:
- * https://github.com/timmolter/XChange/wiki/Design-Notes
+ * <a href="https://github.com/timmolter/XChange/wiki/Design-Notes">...</a>
  *
  * <p>This class is used only in the API by the classes that merge metadata stored in custom JSON
  * file and online info from the remote exchange.
  */
+@Getter
+@ToString
 public class ExchangeMetaData implements Serializable {
 
   private static final long serialVersionUID = -1495610469981534977L;
 
   @JsonProperty("currency_pairs")
-  private Map<CurrencyPair, CurrencyPairMetaData> currencyPairs;
+  @JsonDeserialize(keyUsing = InstrumentMapDeserializer.class)
+  private Map<Instrument, InstrumentMetaData> instruments;
 
   @JsonProperty("currencies")
   private Map<Currency, CurrencyMetaData> currencies;
@@ -40,22 +47,22 @@ public class ExchangeMetaData implements Serializable {
    * {@link #privateRateLimits}.
    */
   @JsonProperty("share_rate_limits")
-  private boolean shareRateLimits = true;
+  private boolean shareRateLimits;
 
   /**
    * Constructor
    *
-   * @param currencyPairs Map of {@link CurrencyPair} -> {@link CurrencyPairMetaData}
+   * @param instruments Map of {@link Instrument} -> {@link InstrumentMetaData}
    * @param currency Map of currency -> {@link CurrencyMetaData}
    */
   public ExchangeMetaData(
-      @JsonProperty("currency_pairs") Map<CurrencyPair, CurrencyPairMetaData> currencyPairs,
+      @JsonProperty("currency_pairs") Map<Instrument, InstrumentMetaData> instruments,
       @JsonProperty("currencies") Map<Currency, CurrencyMetaData> currency,
       @JsonProperty("public_rate_limits") RateLimit[] publicRateLimits,
       @JsonProperty("private_rate_limits") RateLimit[] privateRateLimits,
       @JsonProperty("share_rate_limits") Boolean shareRateLimits) {
 
-    this.currencyPairs = currencyPairs;
+    this.instruments = instruments;
     this.currencies = currency;
 
     this.publicRateLimits = publicRateLimits;
@@ -82,43 +89,9 @@ public class ExchangeMetaData implements Serializable {
     return result;
   }
 
-  public Map<CurrencyPair, CurrencyPairMetaData> getCurrencyPairs() {
-    return currencyPairs;
-  }
-
-  public Map<Currency, CurrencyMetaData> getCurrencies() {
-    return currencies;
-  }
-
-  public RateLimit[] getPublicRateLimits() {
-    return publicRateLimits;
-  }
-
-  public RateLimit[] getPrivateRateLimits() {
-    return privateRateLimits;
-  }
-
-  public boolean isShareRateLimits() {
-    return shareRateLimits;
-  }
-
   @JsonIgnore
   public String toJSONString() {
     return ObjectMapperHelper.toJSON(this);
   }
 
-  @Override
-  public String toString() {
-    return "ExchangeMetaData [currencyPairs="
-        + currencyPairs
-        + ", currencies="
-        + currencies
-        + ", publicRateLimits="
-        + Arrays.toString(publicRateLimits)
-        + ", privateRateLimits="
-        + Arrays.toString(privateRateLimits)
-        + ", shareRateLimits="
-        + shareRateLimits
-        + "]";
-  }
 }

@@ -9,6 +9,8 @@ import org.knowm.xchange.exceptions.ExchangeException;
 import org.knowm.xchange.independentreserve.IndependentReserveAuthenticated;
 import org.knowm.xchange.independentreserve.dto.IndependentReserveHttpStatusException;
 import org.knowm.xchange.independentreserve.dto.account.IndependentReserveBalance;
+import org.knowm.xchange.independentreserve.dto.account.IndependentReserveBrokerageFeeRequest;
+import org.knowm.xchange.independentreserve.dto.account.IndependentReserveBrokerageFeeResponse;
 import org.knowm.xchange.independentreserve.dto.account.IndependentReserveDepositAddressRequest;
 import org.knowm.xchange.independentreserve.dto.account.IndependentReserveDepositAddressResponse;
 import org.knowm.xchange.independentreserve.dto.account.IndependentReserveWithdrawDigitalCurrencyRequest;
@@ -142,5 +144,16 @@ public class IndependentReserveAccountServiceRaw extends IndependentReserveBaseS
             ExchangeEndpoint.GET_TRANSACTIONS, nonce, req.getParameters()));
 
     return independentReserveAuthenticated.getTransactions(req);
+  }
+
+  public IndependentReserveBrokerageFeeResponse getBrokerageFees() throws IOException {
+    Long nonce = exchange.getNonceFactory().createValue();
+    IndependentReserveBrokerageFeeRequest req =
+        new IndependentReserveBrokerageFeeRequest(
+            exchange.getExchangeSpecification().getApiKey(), nonce);
+    req.setSignature(
+        signatureCreator.digestParamsToString(
+            ExchangeEndpoint.GET_BROKER_FEES, nonce, req.getParameters()));
+    return independentReserveAuthenticated.getBrokerageFees(req);
   }
 }

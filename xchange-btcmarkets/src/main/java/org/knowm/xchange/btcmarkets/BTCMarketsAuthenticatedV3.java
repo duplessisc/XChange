@@ -2,9 +2,15 @@ package org.knowm.xchange.btcmarkets;
 
 import java.io.IOException;
 import java.util.List;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import org.knowm.xchange.btcmarkets.dto.BTCMarketsException;
+import org.knowm.xchange.btcmarkets.dto.v3.BTCMarketsExceptionV3;
 import org.knowm.xchange.btcmarkets.dto.v3.account.BTCMarketsAccountBalanceResponse;
 import org.knowm.xchange.btcmarkets.dto.v3.account.BTCMarketsAddressesResponse;
 import org.knowm.xchange.btcmarkets.dto.v3.account.BTCMarketsTradingFeesResponse;
@@ -26,7 +32,7 @@ public interface BTCMarketsAuthenticatedV3 {
       @HeaderParam("BM-AUTH-TIMESTAMP") SynchronizedValueFactory<Long> nonceFactory,
       @HeaderParam("BM-AUTH-SIGNATURE") BTCMarketsDigestV3 signer,
       BTCMarketsPlaceOrderRequest order)
-      throws BTCMarketsException, IOException;
+      throws BTCMarketsExceptionV3, IOException;
 
   @GET
   @Path("addresses")
@@ -35,7 +41,7 @@ public interface BTCMarketsAuthenticatedV3 {
       @HeaderParam("BM-AUTH-TIMESTAMP") SynchronizedValueFactory<Long> nonceFactory,
       @HeaderParam("BM-AUTH-SIGNATURE") BTCMarketsDigestV3 signer,
       @QueryParam("assetName") String assetName)
-      throws BTCMarketsException, IOException;
+      throws BTCMarketsExceptionV3, IOException;
 
   @GET
   @Path("trades")
@@ -47,7 +53,7 @@ public interface BTCMarketsAuthenticatedV3 {
       @QueryParam("before") String before,
       @QueryParam("after") String after,
       @QueryParam("limit") Integer limit)
-      throws BTCMarketsException, IOException;
+      throws BTCMarketsExceptionV3, IOException;
 
   @GET
   @Path("accounts/me/trading-fees")
@@ -55,13 +61,5 @@ public interface BTCMarketsAuthenticatedV3 {
       @HeaderParam("BM-AUTH-APIKEY") String publicKey,
       @HeaderParam("BM-AUTH-TIMESTAMP") SynchronizedValueFactory<Long> nonceFactory,
       @HeaderParam("BM-AUTH-SIGNATURE") BTCMarketsDigestV3 signer)
-      throws BTCMarketsException, IOException;
-  
-  @GET
-  @Path("accounts/me/balances")
-  List<BTCMarketsAccountBalanceResponse> getAccountBalances(
-		  @HeaderParam("BM-AUTH-APIKEY") String publicKey,
-	      @HeaderParam("BM-AUTH-TIMESTAMP") SynchronizedValueFactory<Long> nonceFactory,
-	      @HeaderParam("BM-AUTH-SIGNATURE") BTCMarketsDigestV3 signer)
-		  throws BTCMarketsException, IOException;
+      throws BTCMarketsExceptionV3, IOException;
 }

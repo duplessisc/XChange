@@ -35,4 +35,12 @@ public class SymbolResponse {
   private BigDecimal priceIncrement;
 
   private boolean enableTrading;
+
+  private String feeCurrency;
+
+  private boolean isMarginEnabled;
+
+  private BigDecimal priceLimitRate;
+
+  private BigDecimal minFunds;
 }
