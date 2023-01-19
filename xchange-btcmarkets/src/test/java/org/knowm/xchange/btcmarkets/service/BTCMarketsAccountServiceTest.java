@@ -15,6 +15,7 @@ import org.knowm.xchange.btcmarkets.dto.account.BTCMarketsFundtransfer;
 import org.knowm.xchange.btcmarkets.dto.account.BTCMarketsFundtransferHistoryResponse;
 import org.knowm.xchange.btcmarkets.dto.trade.BTCMarketsWithdrawCryptoRequest;
 import org.knowm.xchange.btcmarkets.dto.trade.BTCMarketsWithdrawCryptoResponse;
+import org.knowm.xchange.btcmarkets.dto.v3.account.BTCMarketsAccountBalanceResponse;
 import org.knowm.xchange.btcmarkets.dto.v3.account.BTCMarketsAddressesResponse;
 import org.knowm.xchange.currency.Currency;
 import org.knowm.xchange.dto.account.AccountInfo;
@@ -29,12 +30,13 @@ public class BTCMarketsAccountServiceTest extends BTCMarketsServiceTest {
   @Test
   public void shouldCreateAccountInfo() throws IOException {
     // given
-    BTCMarketsBalance balance = parse(BTCMarketsBalance.class);
+//    BTCMarketsBalance balance = parse(BTCMarketsBalance.class);
+	BTCMarketsAccountBalanceResponse[] balance = parse(BTCMarketsAccountBalanceResponse[].class, "v3");
 
-    when(btcMarketsAuthenticated.getBalance(
+    when(btcMarketsAuthenticatedV3.getAccountBalances(
             Mockito.eq(SPECIFICATION_API_KEY),
             Mockito.any(SynchronizedValueFactory.class),
-            Mockito.any(BTCMarketsDigest.class)))
+            Mockito.any(BTCMarketsDigestV3.class)))
         .thenReturn(Arrays.asList(balance));
 
     // when
@@ -45,7 +47,7 @@ public class BTCMarketsAccountServiceTest extends BTCMarketsServiceTest {
     assertThat(accountInfo.getWallets()).hasSize(1);
 
     BtcMarketsAssert.assertEquals(
-        accountInfo.getWallet().getBalance(Currency.BTC), EXPECTED_BALANCE);
+        accountInfo.getWallet().getBalance(Currency.LTC), EXPECTED_BALANCE_V3);
   }
 
   @Test

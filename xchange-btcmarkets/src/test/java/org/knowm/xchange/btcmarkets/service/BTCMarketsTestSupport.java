@@ -3,10 +3,7 @@ package org.knowm.xchange.btcmarkets.service;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.text.ParseException;
-import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -14,8 +11,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
-
-import javax.print.attribute.standard.DateTimeAtCompleted;
 
 import org.knowm.xchange.btcmarkets.dto.BTCMarketsDtoTestSupport;
 import org.knowm.xchange.btcmarkets.dto.account.BTCMarketsBalance;
@@ -28,18 +23,10 @@ import org.knowm.xchange.btcmarkets.dto.v3.marketdata.BTCMarketsTrade;
 import org.knowm.xchange.currency.Currency;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.Order;
-import org.knowm.xchange.dto.Order.OrderType;
 import org.knowm.xchange.dto.account.Balance;
 import org.knowm.xchange.dto.marketdata.Ticker;
-import org.knowm.xchange.dto.marketdata.Trade;
-import org.knowm.xchange.dto.marketdata.Trades;
 import org.knowm.xchange.dto.trade.LimitOrder;
 import org.knowm.xchange.dto.trade.UserTrade;
-import org.knowm.xchange.utils.jackson.ISO8601DateDeserializer;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.util.ISO8601Utils;
 
 /** Test utilities for btnmarkets tests. */
 public class BTCMarketsTestSupport extends BTCMarketsDtoTestSupport {

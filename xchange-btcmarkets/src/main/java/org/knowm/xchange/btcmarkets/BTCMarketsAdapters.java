@@ -12,6 +12,7 @@ import org.knowm.xchange.btcmarkets.dto.marketdata.BTCMarketsTicker;
 import org.knowm.xchange.btcmarkets.dto.trade.BTCMarketsOrder;
 import org.knowm.xchange.btcmarkets.dto.trade.BTCMarketsOrders;
 import org.knowm.xchange.btcmarkets.dto.trade.BTCMarketsUserTrade;
+import org.knowm.xchange.btcmarkets.dto.v3.account.BTCMarketsAccountBalanceResponse;
 import org.knowm.xchange.btcmarkets.dto.v3.marketdata.BTCMarketsTrade;
 import org.knowm.xchange.btcmarkets.dto.v3.trade.BTCMarketsTradeHistoryResponse;
 import org.knowm.xchange.currency.Currency;
@@ -67,6 +68,10 @@ public final class BTCMarketsAdapters {
 
   private BTCMarketsAdapters() {}
 
+  @Deprecated 
+  /*
+   * Replaced by  v3 call
+   */
   public static Wallet adaptWallet(List<BTCMarketsBalance> balances) {
     List<Balance> wallets = new ArrayList<>(balances.size());
     for (BTCMarketsBalance blc : balances) {
@@ -75,6 +80,15 @@ public final class BTCMarketsAdapters {
     }
     return Wallet.Builder.from(wallets).build();
   }
+  
+  public static Wallet adaptWalletV3(List<BTCMarketsAccountBalanceResponse> balances) {
+	    List<Balance> wallets = new ArrayList<>(balances.size());
+	    for (BTCMarketsAccountBalanceResponse blc : balances) {
+	      final Currency currency = Currency.getInstance(blc.getAssetName());
+	      wallets.add(new Balance(currency, blc.getBalance(), blc.getAvailable(), blc.getLocked()));
+	    }
+	    return Wallet.Builder.from(wallets).build();
+	  }
 
   public static OrderBook adaptOrderBook(
       BTCMarketsOrderBook btcmarketsOrderBook, CurrencyPair currencyPair) {

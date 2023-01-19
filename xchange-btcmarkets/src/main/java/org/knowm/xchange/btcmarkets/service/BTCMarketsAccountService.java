@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import org.knowm.xchange.Exchange;
 import org.knowm.xchange.btcmarkets.BTCMarketsAdapters;
+import org.knowm.xchange.btcmarkets.dto.account.BTCMarketsBalance;
 import org.knowm.xchange.btcmarkets.dto.v3.account.BTCMarketsAddressesResponse;
 import org.knowm.xchange.btcmarkets.dto.v3.account.BTCMarketsTradingFeesResponse;
 import org.knowm.xchange.currency.Currency;
@@ -31,7 +32,7 @@ public class BTCMarketsAccountService extends BTCMarketsAccountServiceRaw
   public AccountInfo getAccountInfo() throws IOException {
     return new AccountInfo(
         exchange.getExchangeSpecification().getUserName(),
-        BTCMarketsAdapters.adaptWallet(getBTCMarketsBalance()));
+        BTCMarketsAdapters.adaptWalletV3(balances()));
   }
 
   @Override
@@ -83,4 +84,6 @@ public class BTCMarketsAccountService extends BTCMarketsAccountServiceRaw
     }
     return dynamicTradingFees;
   }
+  
+ 
 }
