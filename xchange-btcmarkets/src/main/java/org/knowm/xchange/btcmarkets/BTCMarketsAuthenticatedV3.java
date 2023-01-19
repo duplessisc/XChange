@@ -62,4 +62,12 @@ public interface BTCMarketsAuthenticatedV3 {
       @HeaderParam("BM-AUTH-TIMESTAMP") SynchronizedValueFactory<Long> nonceFactory,
       @HeaderParam("BM-AUTH-SIGNATURE") BTCMarketsDigestV3 signer)
       throws BTCMarketsExceptionV3, IOException;
+  
+  @GET
+  @Path("accounts/me/balances")
+  List<BTCMarketsAccountBalanceResponse> getAccountBalances(
+		  @HeaderParam("BM-AUTH-APIKEY") String publicKey,
+	      @HeaderParam("BM-AUTH-TIMESTAMP") SynchronizedValueFactory<Long> nonceFactory,
+	      @HeaderParam("BM-AUTH-SIGNATURE") BTCMarketsDigestV3 signer)
+		  throws BTCMarketsExceptionV3, IOException;
 }
