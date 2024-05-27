@@ -8,7 +8,7 @@ import info.bitrich.xchangestream.btcmarkets.dto.BTCMarketsWebSocketHeartbeatMes
 import info.bitrich.xchangestream.btcmarkets.dto.BTCMarketsWebSocketSubscriptionMessage;
 import info.bitrich.xchangestream.service.netty.JsonNettyStreamingService;
 import info.bitrich.xchangestream.service.netty.StreamingObjectMapperHelper;
-import io.reactivex.Observable;
+import io.reactivex.rxjava3.core.Observable;
 import java.io.IOException;
 import java.nio.channels.NonReadableChannelException;
 import java.util.ArrayList;
@@ -138,7 +138,7 @@ public class BTCMarketsStreamingService extends JsonNettyStreamingService {
   }
 
   @Override
-  public String getUnsubscribeMessage(String channelName) throws IOException {
+  public String getUnsubscribeMessage(String channelName, Object... args) throws IOException {
 
     if (publicChannels.contains(channelName) | publicChannels.contains(channelName.split(":")[0])) {
       LOG.debug(
