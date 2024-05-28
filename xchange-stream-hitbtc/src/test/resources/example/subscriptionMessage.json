@@ -1,7 +1,0 @@
-{
-  "method": "subscribeTicker",
-  "params": {
-    "symbol": "ETHBTC"
-  },
-  "id": 123
-}

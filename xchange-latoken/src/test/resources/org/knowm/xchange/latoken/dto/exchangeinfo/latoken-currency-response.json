@@ -1,8 +1,0 @@
-{
-	"currencyId": 102,
-	"symbol": "LA",
-	"name": "Latoken",
-	"precission": 8,
-	"type": "ERC20",
-	"fee": 0.1
-}
