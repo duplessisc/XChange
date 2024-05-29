@@ -1,0 +1,7 @@
+CoinMarketCap API specification
+================================
+
+Documentation
+-------------
+https://api.coinmarketcap.com - old depracated API
+https://coinmarketcap.com/api/documentation/v1/ - current API
