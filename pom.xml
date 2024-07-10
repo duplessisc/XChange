@@ -31,7 +31,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <version.java>8</version.java>
-    <version.assertj>3.25.3</version.assertj>
+    <version.assertj>3.26.3</version.assertj>
     <version.commons.lang3>3.14.0</version.commons.lang3>
     <version.fasterxml>2.14.3</version.fasterxml>
     <version.github.mmazi>3.0</version.github.mmazi>
