@@ -1,6 +1,8 @@
 package info.bitrich.xchangestream.btcmarkets;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+
+import info.bitrich.xchangestream.btcmarkets.dto.BTCMarketsWebSocketOrderChangeMessage;
 import info.bitrich.xchangestream.btcmarkets.dto.BTCMarketsWebSocketOrderbookMessage;
 import info.bitrich.xchangestream.btcmarkets.dto.BTCMarketsWebSocketTickerMessage;
 import info.bitrich.xchangestream.btcmarkets.dto.BTCMarketsWebSocketTradeMessage;
@@ -24,7 +26,7 @@ public class BTCMarketsStreamingAdapters {
   private static final Logger LOG = LoggerFactory.getLogger(BTCMarketsStreamingAdapters.class);
   
   public static String adaptCurrencyPairToMarketId(CurrencyPair currencyPair) {
-    return currencyPair.base.toString() + "-" + currencyPair.counter.toString();
+    return currencyPair.getBase().toString() + "-" + currencyPair.getCounter().toString();
   }
 
   public static CurrencyPair adaptMarketIdToCurrencyPair(String marketId) {
