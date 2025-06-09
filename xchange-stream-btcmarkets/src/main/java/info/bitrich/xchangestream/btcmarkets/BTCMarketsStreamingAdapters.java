@@ -15,7 +15,6 @@ import org.knowm.xchange.dto.marketdata.OrderBook;
 import org.knowm.xchange.dto.marketdata.Ticker;
 import org.knowm.xchange.dto.marketdata.Trade;
 import org.knowm.xchange.dto.trade.LimitOrder;
-import org.knowm.xchange.exceptions.NotYetImplementedForExchangeException;
 import org.knowm.xchange.utils.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +22,7 @@ import org.slf4j.LoggerFactory;
 public class BTCMarketsStreamingAdapters {
 
   private static final Logger LOG = LoggerFactory.getLogger(BTCMarketsStreamingAdapters.class);
-
+  
   public static String adaptCurrencyPairToMarketId(CurrencyPair currencyPair) {
     return currencyPair.base.toString() + "-" + currencyPair.counter.toString();
   }
@@ -77,10 +76,31 @@ public class BTCMarketsStreamingAdapters {
         .type(BTCMarketsAdapters.adaptOrderType(message.getSide()))
         .build();
   }
-
-  public static OrderBook adaptOrderUpdateMessageToOrderBook(
-      BTCMarketsWebSocketOrderbookMessage message) {
-
-    throw new NotYetImplementedForExchangeException();
-  }
+  public static LimitOrder adaptOrderChangeMessageToOrder(BTCMarketsWebSocketOrderChangeMessage message) {
+		 BigDecimal averagePrice =
+			        BigDecimal.valueOf(
+			        		message.getTrades().stream()
+			                .mapToDouble(value -> value.getPrice().doubleValue())
+			                .summaryStatistics()
+			                .getAverage());
+	    BigDecimal fee =
+	        BigDecimal.valueOf(
+	        		message.getTrades().stream().mapToDouble(value -> value.getFee().doubleValue()).sum());
+	    BigDecimal cumulativeAmount =
+	        BigDecimal.valueOf(
+	        		message.getTrades().stream().mapToDouble(value -> value.getVolume().doubleValue()).sum());
+	    return new LimitOrder.Builder(
+	            BTCMarketsAdapters.adaptOrderType(message.getSide()), 
+	            new CurrencyPair(message.getMarketId()))
+//			        .originalAmount(message.getVolume())
+	        .id(message.getOrderId())
+	        .timestamp(message.getTimestamp())
+//			        .limitPrice(message.getPrice())
+	        .averagePrice(averagePrice)
+	        .cumulativeAmount(cumulativeAmount)
+	        .fee(fee)
+	        .orderStatus(BTCMarketsAdapters.adaptOrderStatus(message.getStatus()))
+	        .userReference(message.getClientOrderId())
+				.build();
+	}
 }
