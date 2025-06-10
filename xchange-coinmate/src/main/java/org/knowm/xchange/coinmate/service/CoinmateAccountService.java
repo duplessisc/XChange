@@ -23,14 +23,6 @@
  */
 package org.knowm.xchange.coinmate.service;
 
-import static org.apache.commons.lang3.math.NumberUtils.toLong;
-
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import org.knowm.xchange.Exchange;
 import org.knowm.xchange.coinmate.CoinmateAdapters;
 import org.knowm.xchange.coinmate.CoinmateUtils;
@@ -49,14 +41,16 @@ import org.knowm.xchange.dto.account.Fee;
 import org.knowm.xchange.dto.account.FundingRecord;
 import org.knowm.xchange.instrument.Instrument;
 import org.knowm.xchange.service.account.AccountService;
-import org.knowm.xchange.service.trade.params.DefaultWithdrawFundsParams;
-import org.knowm.xchange.service.trade.params.TradeHistoryParamLimit;
-import org.knowm.xchange.service.trade.params.TradeHistoryParamOffset;
-import org.knowm.xchange.service.trade.params.TradeHistoryParams;
-import org.knowm.xchange.service.trade.params.TradeHistoryParamsIdSpan;
-import org.knowm.xchange.service.trade.params.TradeHistoryParamsSorted;
-import org.knowm.xchange.service.trade.params.TradeHistoryParamsTimeSpan;
-import org.knowm.xchange.service.trade.params.WithdrawFundsParams;
+import org.knowm.xchange.service.trade.params.*;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static org.apache.commons.lang3.math.NumberUtils.toLong;
 
 /**
  * @author Martin Stachon
@@ -75,7 +69,7 @@ public class CoinmateAccountService extends CoinmateAccountServiceRaw implements
   }
 
   @Override
-  public Map<Instrument, Fee> getDynamicTradingFeesByInstrument() throws IOException {
+  public Map<Instrument, Fee> getDynamicTradingFeesByInstrument(String... category) throws IOException {
     Set<Instrument> instruments = exchange.getExchangeMetaData().getInstruments().keySet();
     HashMap<Instrument, Fee> result = new HashMap<>();
     for (Instrument instrument : instruments) {
@@ -105,7 +99,14 @@ public class CoinmateAccountService extends CoinmateAccountServiceRaw implements
     } else if (currency.equals(Currency.SOL)) {
       response = coinmateSolanaWithdrawal(amount, address);
     } else if (currency.equals(Currency.USDT)) {
-      Long tradeId = coinmateWithdrawVirtualCurrency(amount, address, Currency.USDT.getCurrencyCode(), AmountType.GROSS, FeePriority.HIGH, null);
+      Long tradeId =
+          coinmateWithdrawVirtualCurrency(
+              amount,
+              address,
+              Currency.USDT.getCurrencyCode(),
+              AmountType.GROSS,
+              FeePriority.HIGH,
+              null);
       return Long.toString(tradeId);
     } else {
       throw new IOException(
@@ -119,7 +120,14 @@ public class CoinmateAccountService extends CoinmateAccountServiceRaw implements
   public String withdrawFunds(Currency currency, BigDecimal amount, AddressWithTag address)
       throws IOException {
     if (currency.equals(Currency.XRP)) {
-      Long tradeId = coinmateWithdrawVirtualCurrency(amount, address.getAddress(), currency.getCurrencyCode(), AmountType.GROSS, FeePriority.HIGH, address.getAddressTag());
+      Long tradeId =
+          coinmateWithdrawVirtualCurrency(
+              amount,
+              address.getAddress(),
+              currency.getCurrencyCode(),
+              AmountType.GROSS,
+              FeePriority.HIGH,
+              address.getAddressTag());
       return Long.toString(tradeId);
     } else {
       return withdrawFunds(currency, amount, address.getAddress());
@@ -132,7 +140,14 @@ public class CoinmateAccountService extends CoinmateAccountServiceRaw implements
       DefaultWithdrawFundsParams defaultParams = (DefaultWithdrawFundsParams) params;
 
       if (defaultParams.getCurrency().equals(Currency.XRP)) {
-        Long tradeId = coinmateWithdrawVirtualCurrency(defaultParams.getAmount(), defaultParams.getAddress(), defaultParams.getCurrency().getCurrencyCode(), AmountType.GROSS, FeePriority.HIGH, defaultParams.getAddressTag());
+        Long tradeId =
+            coinmateWithdrawVirtualCurrency(
+                defaultParams.getAmount(),
+                defaultParams.getAddress(),
+                defaultParams.getCurrency().getCurrencyCode(),
+                AmountType.GROSS,
+                FeePriority.HIGH,
+                defaultParams.getAddressTag());
         return Long.toString(tradeId);
       }
 
@@ -158,7 +173,8 @@ public class CoinmateAccountService extends CoinmateAccountServiceRaw implements
     } else if (currency.equals(Currency.SOL)) {
       addresses = coinmateSolanaDepositAddresses();
     } else if (currency.equals(Currency.USDT)) {
-      List<String> addressesAll = coinmateVirtualCurrencyDepositAddresses(currency.getCurrencyCode());
+      List<String> addressesAll =
+          coinmateVirtualCurrencyDepositAddresses(currency.getCurrencyCode());
       if (addressesAll.isEmpty()) {
         return null;
       }

@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.knowm.xchange</groupId>
         <artifactId>xchange-parent</artifactId>
-        <version>5.1.2-SNAPSHOT</version>
+        <version>5.2.3-SNAPSHOT</version>
     </parent>
     <artifactId>xchange-stream-gateio</artifactId>
 
@@ -15,9 +15,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>${version.fasterxml}</version>
         </dependency>
-
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -45,5 +43,20 @@
 
     </dependencies>
 
+    <build>
+
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <configuration>
+                        <systemPropertiesFile>integration-test.env.properties</systemPropertiesFile>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+    </build>
 
 </project>

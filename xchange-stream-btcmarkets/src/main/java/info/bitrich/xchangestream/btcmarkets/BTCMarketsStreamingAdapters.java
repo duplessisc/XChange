@@ -78,6 +78,7 @@ public class BTCMarketsStreamingAdapters {
         .type(BTCMarketsAdapters.adaptOrderType(message.getSide()))
         .build();
   }
+
   public static LimitOrder adaptOrderChangeMessageToOrder(BTCMarketsWebSocketOrderChangeMessage message) {
 		 BigDecimal averagePrice =
 			        BigDecimal.valueOf(
