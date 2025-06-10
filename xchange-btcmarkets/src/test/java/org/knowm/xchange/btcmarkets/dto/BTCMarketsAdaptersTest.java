@@ -14,6 +14,7 @@ import org.knowm.xchange.btcmarkets.dto.account.BTCMarketsFundtransferHistoryRes
 import org.knowm.xchange.btcmarkets.dto.marketdata.BTCMarketsOrderBook;
 import org.knowm.xchange.btcmarkets.dto.marketdata.BTCMarketsTicker;
 import org.knowm.xchange.btcmarkets.dto.trade.BTCMarketsOrders;
+import org.knowm.xchange.btcmarkets.dto.v3.account.BTCMarketsAccountBalanceResponse;
 import org.knowm.xchange.btcmarkets.dto.v3.trade.BTCMarketsTradeHistoryResponse;
 import org.knowm.xchange.currency.Currency;
 import org.knowm.xchange.currency.CurrencyPair;
@@ -37,6 +38,18 @@ public class BTCMarketsAdaptersTest extends BTCMarketsDtoTestSupport {
     assertThat(wallet.getBalance(Currency.LTC).getTotal()).isEqualTo(new BigDecimal("10.00000000"));
     assertThat(wallet.getBalance(Currency.LTC).getAvailable())
         .isEqualTo(new BigDecimal("10.00000000"));
+  }
+  
+  @Test
+  public void shouldAdaptBalancesV3() throws IOException {
+    final BTCMarketsAccountBalanceResponse[] response = parse(BTCMarketsAccountBalanceResponse[].class, "v3");
+
+    Wallet wallet = BTCMarketsAdapters.adaptWalletV3(Arrays.asList(response));
+
+    assertThat(wallet.getBalances()).hasSize(2);
+    assertThat(wallet.getBalance(Currency.LTC).getTotal()).isEqualTo(new BigDecimal("5.123"));
+    assertThat(wallet.getBalance(Currency.LTC).getAvailable())
+        .isEqualTo(new BigDecimal("5.123"));
   }
 
   @Test

@@ -11,6 +11,7 @@ import jakarta.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.util.List;
 import org.knowm.xchange.btcmarkets.dto.v3.BTCMarketsExceptionV3;
+import org.knowm.xchange.btcmarkets.dto.v3.account.BTCMarketsAccountBalanceResponse;
 import org.knowm.xchange.btcmarkets.dto.v3.account.BTCMarketsAddressesResponse;
 import org.knowm.xchange.btcmarkets.dto.v3.account.BTCMarketsTradingFeesResponse;
 import org.knowm.xchange.btcmarkets.dto.v3.trade.BTCMarketsPlaceOrderRequest;
@@ -61,4 +62,12 @@ public interface BTCMarketsAuthenticatedV3 {
       @HeaderParam("BM-AUTH-TIMESTAMP") SynchronizedValueFactory<Long> nonceFactory,
       @HeaderParam("BM-AUTH-SIGNATURE") BTCMarketsDigestV3 signer)
       throws BTCMarketsExceptionV3, IOException;
+  
+  @GET
+  @Path("accounts/me/balances")
+  List<BTCMarketsAccountBalanceResponse> getAccountBalances(
+		  @HeaderParam("BM-AUTH-APIKEY") String publicKey,
+	      @HeaderParam("BM-AUTH-TIMESTAMP") SynchronizedValueFactory<Long> nonceFactory,
+	      @HeaderParam("BM-AUTH-SIGNATURE") BTCMarketsDigestV3 signer)
+		  throws BTCMarketsExceptionV3, IOException;
 }

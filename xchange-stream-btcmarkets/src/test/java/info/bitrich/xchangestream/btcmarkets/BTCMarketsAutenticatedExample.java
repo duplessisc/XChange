@@ -2,28 +2,22 @@ package info.bitrich.xchangestream.btcmarkets;
 
 import info.bitrich.xchangestream.core.StreamingExchange;
 import info.bitrich.xchangestream.core.StreamingExchangeFactory;
-import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.disposables.Disposable;
 import org.knowm.xchange.ExchangeSpecification;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class BTCMarketsManualExample {
-  private static final Logger logger = LoggerFactory.getLogger(BTCMarketsManualExample.class);
+public class BTCMarketsAutenticatedExample {
+  private static final Logger logger = LoggerFactory.getLogger(BTCMarketsAutenticatedExample.class);
 
   public static void main(String[] args) {
-	  logger.trace("Starting app");
-	  System.out.println("System out: Starting app");
-	  System.out.println("Logger name: " + logger.getName() + " Info enabled? " + logger.isInfoEnabled());
-//	  System.out.println(
-	  try {
+
     ExchangeSpecification defaultExchangeSpecification =
         new ExchangeSpecification(BTCMarketsStreamingExchange.class);
 
     StreamingExchange exchange =
         StreamingExchangeFactory.INSTANCE.createExchange(defaultExchangeSpecification);
-    logger.debug("exchange: " + exchange.toString());
-    
     exchange.connect().blockingAwait();
 
     Disposable btcOrderBookDisposable =
@@ -58,7 +52,6 @@ public class BTCMarketsManualExample {
                   logger.info("BTC: 24h volume  {}", ticker.getVolume());
                   logger.info("BTC: timestamp {}", ticker.getVolume());
                 });
-    
 
     try {
       Thread.sleep(30000);
@@ -70,9 +63,5 @@ public class BTCMarketsManualExample {
     ethOrderBookDisposable.dispose();
     btcTickerDisposable.dispose();
     exchange.disconnect().subscribe(() -> logger.info("Disconnected from the Exchange"));
-    }
-    catch (Exception e) {
-    	e.printStackTrace();
-    }
   }
 }
