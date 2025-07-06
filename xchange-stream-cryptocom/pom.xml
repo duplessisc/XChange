@@ -9,9 +9,9 @@
         <version>5.2.3-SNAPSHOT</version>
     </parent>
 
-    <artifactId>xchange-cryptocom</artifactId>
+    <artifactId>xchange-stream-cryptocom</artifactId>
 
-    <name>XChange CryptoCom</name>
+    <name>XChange CryptoCom Stream</name>
     <description>XChange implementation for the Crypto.com Exchange</description>
 
     <url>http://knowm.org/open-source/xchange/</url>
