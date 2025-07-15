@@ -100,6 +100,12 @@ public class AccountServiceIntegration extends BinanceExchangeIntegration {
   }
 
   @Test
+  public void get_account_info() throws Exception {
+    Wallet wallet = accountService.getAccountInfo().getWallet();
+    assertThat(wallet).isNotNull();
+  }
+
+  @Test
   public void testWithdrawal() throws Exception {
     assumeProduction();
     accountService.withdrawFunds(

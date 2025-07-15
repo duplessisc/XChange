@@ -4,6 +4,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.ok;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.knowm.xchange.binance.dto.trade.OrderType.LIMIT;
 import static org.knowm.xchange.binance.dto.trade.OrderType.MARKET;
@@ -27,6 +28,8 @@ import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.trade.LimitOrder;
 import org.knowm.xchange.dto.trade.MarketOrder;
 import org.knowm.xchange.dto.trade.StopOrder;
+import org.knowm.xchange.dto.trade.UserTrades;
+import org.knowm.xchange.service.trade.params.TradeHistoryParams;
 
 public class TradeServiceIntegration extends BinanceExchangeIntegration {
 
@@ -152,5 +155,12 @@ public class TradeServiceIntegration extends BinanceExchangeIntegration {
     assertEquals(
         "90698471826",
         dustLog.getDribblets().get(0).getBinanceDribbletDetails().get(0).getTransId());
+  }
+
+  @Test
+  public void get_trade_history() throws Exception {
+    assumeProduction();
+    UserTrades trades = tradeService.getTradeHistory(tradeService.createTradeHistoryParams());
+    assertThat(trades).isNotNull();
   }
 }

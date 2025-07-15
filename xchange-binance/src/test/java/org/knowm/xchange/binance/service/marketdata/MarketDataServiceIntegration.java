@@ -44,11 +44,23 @@ public class MarketDataServiceIntegration extends BinanceExchangeIntegration {
   }
 
   @Test
+  public void get_all_tickers() throws IOException {
+    List<Ticker> tickers = exchange.getMarketDataService().getTickers(null);
+    assertThat(tickers).isNotEmpty();
+  }
+
+  @Test
   public void valid_ticker() throws Exception {
     Ticker ticker = exchange.getMarketDataService().getTicker(CurrencyPair.BTC_USDT);
 
     assertThat(ticker).hasNoNullFieldsOrProperties();
     assertThat(ticker.getBid()).isLessThan(ticker.getAsk());
+  }
+
+  @Test
+  public void get_ticker() throws Exception {
+    Ticker ticker = exchange.getMarketDataService().getTicker(CurrencyPair.BTC_USDT);
+    assertThat(ticker).isNotNull();
   }
 
   @Test
@@ -59,5 +71,12 @@ public class MarketDataServiceIntegration extends BinanceExchangeIntegration {
     assertThat(orderBook.getAsks()).isNotEmpty();
     assertThat(orderBook.getBids()).isNotEmpty();
     assertThat(orderBook.getBids().get(0)).isLessThan(orderBook.getAsks().get(0));
+  }
+
+  @Test
+  public void get_order_book() throws IOException {
+    OrderBook orderBook =
+        exchange.getMarketDataService().getOrderBook((Instrument) CurrencyPair.BTC_USDT);
+    assertThat(orderBook).isNotNull();
   }
 }
