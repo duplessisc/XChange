@@ -6,6 +6,9 @@ import org.knowm.xchange.cryptocom.dto.marketdata.CryptoComBookEvent;
 import org.knowm.xchange.cryptocom.dto.marketdata.CryptoComOrderBookEntry;
 import org.knowm.xchange.cryptocom.dto.marketdata.CryptoComTickerEvent;
 import org.knowm.xchange.cryptocom.dto.marketdata.CryptoComTradeEvent;
+// Importing REST specific DTOs where applicable
+import org.knowm.xchange.cryptocom.dto.marketdata.CryptoComInstrument;
+import org.knowm.xchange.cryptocom.dto.marketdata.CryptoComRestOrderBook; // Will use this for REST
 import org.knowm.xchange.cryptocom.dto.trade.CryptoComUserOrderEvent;
 import org.knowm.xchange.cryptocom.dto.trade.CryptoComUserTradeEvent;
 import org.knowm.xchange.currency.Currency;
@@ -36,6 +39,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
+import org.knowm.xchange.dto.meta.ExchangeMetaData;
+import org.knowm.xchange.dto.meta.InstrumentMetaData;
+import java.util.Map;
+import java.util.HashMap;
+
 
 public class CryptoComAdapters {
 
@@ -50,20 +59,15 @@ public class CryptoComAdapters {
             return null;
         }
 
-        // Spot: BTC_USDT, ETH_CRO
-        // Perpetual Futures: BTCUSD-PERP
-        // Dated Futures: BTCUSD-231229 (YYMMDD)
-        // Options: BTCUSD-231229-30000-C (Instrument-YYMMDD-Strike-Type)
-
         if (cryptoComInstrumentName.endsWith("-PERP")) {
             String baseSymbol = cryptoComInstrumentName.substring(0, cryptoComInstrumentName.indexOf("-PERP"));
             CurrencyPair underlying = adaptUnderlyingToCurrencyPair(baseSymbol);
             return new FuturesContract(underlying, "PERP");
-        } else if (cryptoComInstrumentName.matches(".+-\\d{6}$")) { // Dated Future: BTCUSD-231229
+        } else if (cryptoComInstrumentName.matches(".+-\\d{6}$")) {
             String[] parts = cryptoComInstrumentName.split("-");
             CurrencyPair underlying = adaptUnderlyingToCurrencyPair(parts[0]);
-            return new FuturesContract(underlying, parts[1]); // parts[1] is YYMMDD
-        } else if (cryptoComInstrumentName.matches(".+-\\d{6}-\\d+-[CP]$")) { // Option: BTCUSD-231229-30000-C
+            return new FuturesContract(underlying, parts[1]);
+        } else if (cryptoComInstrumentName.matches(".+-\\d{6}-\\d+-[CP]$")) {
             String[] parts = cryptoComInstrumentName.split("-");
             CurrencyPair underlying = adaptUnderlyingToCurrencyPair(parts[0]);
             Date expiryDate = adaptDateYYMMDD(parts[1]);
@@ -75,17 +79,14 @@ public class CryptoComAdapters {
                 .strike(strikePrice)
                 .type(optionType)
                 .build();
-        } else if (cryptoComInstrumentName.contains("_")) { // Spot
+        } else if (cryptoComInstrumentName.contains("_")) {
             return new CurrencyPair(cryptoComInstrumentName.replace("_", "/"));
-        } else { // Single currency
+        } else {
             return Currency.getInstance(cryptoComInstrumentName);
         }
     }
 
-    // Helper to form CurrencyPair from underlying symbol like "BTCUSD"
     private static CurrencyPair adaptUnderlyingToCurrencyPair(String underlyingSymbol) {
-        // Assuming common pattern like BTCUSD, ETHUSD.
-        // More robust parsing might be needed if other patterns exist (e.g., 3-letter vs 4-letter quotes)
         if (underlyingSymbol.endsWith("USD")) {
             return new CurrencyPair(underlyingSymbol.substring(0, underlyingSymbol.length() - 3), "USD");
         }  else if (underlyingSymbol.endsWith("USDT")) {
@@ -93,20 +94,16 @@ public class CryptoComAdapters {
         } else if (underlyingSymbol.endsWith("EUR")) {
             return new CurrencyPair(underlyingSymbol.substring(0, underlyingSymbol.length() - 3), "EUR");
         }
-        // Add more quote currencies as needed or a more generic split
-        // For now, a simple assumption for common pairs.
-        // If pair is like BTCETH, this will need smarter logic.
-        // Defaulting to a 3-letter quote currency assumption if not USD/USDT/EUR.
         if (underlyingSymbol.length() > 3) {
             String base = underlyingSymbol.substring(0, underlyingSymbol.length() - 3);
             String counter = underlyingSymbol.substring(underlyingSymbol.length() - 3);
             return new CurrencyPair(base, counter);
         }
         LOG.warn("Could not reliably parse underlying symbol {} into CurrencyPair", underlyingSymbol);
-        return new CurrencyPair(underlyingSymbol, ""); // Fallback, likely incorrect
+        return new CurrencyPair(underlyingSymbol, "");
     }
 
-    private static Date adaptDateYYMMDD(String dateStr) { // YYMMDD
+    private static Date adaptDateYYMMDD(String dateStr) {
         try {
             SimpleDateFormat sdf = new SimpleDateFormat("yyMMdd");
             sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -131,7 +128,6 @@ public class CryptoComAdapters {
             if ("PERP".equals(contract.getPrompt())) {
                 return underlyingSymbol + "-PERP";
             } else {
-                // Prompt should be YYMMDD for dated futures
                 return underlyingSymbol + "-" + contract.getPrompt();
             }
         } else if (instrument instanceof OptionsContract) {
@@ -145,31 +141,54 @@ public class CryptoComAdapters {
             String type = contract.getType() == OptionsContract.OptionType.CALL ? "C" : "P";
             return underlyingSymbol + "-" + expiry + "-" + contract.getStrike().stripTrailingZeros().toPlainString() + "-" + type;
         }
-        // Fallback for single Currency
         if (instrument instanceof Currency) {
             return ((Currency) instrument).getCurrencyCode();
         }
         LOG.warn("Cannot adapt XChange Instrument {} to Crypto.com string format", instrument);
-        return instrument.toString().replace("/", "_"); // Generic fallback
+        return instrument.toString().replace("/", "_");
     }
 
-    public static OrderBook adaptOrderBook(CryptoComBookEvent bookEvent, Instrument instrument) {
+    // For REST OrderBook (uses CryptoComRestOrderBook DTO)
+    public static OrderBook adaptOrderBook(CryptoComRestOrderBook restBook, Instrument instrument) {
         List<LimitOrder> asks = new ArrayList<>();
         List<LimitOrder> bids = new ArrayList<>();
+        long timestamp = (restBook != null && restBook.getTimestamp() != 0) ? restBook.getTimestamp() : System.currentTimeMillis();
 
-        if (bookEvent.getAsks() != null) {
-            for (CryptoComOrderBookEntry entry : bookEvent.getAsks()) {
-                asks.add(new LimitOrder(Order.OrderType.ASK, entry.getQuantity(), instrument, null, null, entry.getPrice()));
+
+        if (restBook != null && restBook.getAsks() != null) {
+            for (CryptoComOrderBookEntry entry : restBook.getAsks()) {
+                asks.add(new LimitOrder(Order.OrderType.ASK, entry.getQuantity(), instrument, null, new Date(timestamp), entry.getPrice()));
             }
         }
-        if (bookEvent.getBids() != null) {
-            for (CryptoComOrderBookEntry entry : bookEvent.getBids()) {
-                bids.add(new LimitOrder(Order.OrderType.BID, entry.getQuantity(), instrument, null, null, entry.getPrice()));
+        if (restBook != null && restBook.getBids() != null) {
+            for (CryptoComOrderBookEntry entry : restBook.getBids()) {
+                bids.add(new LimitOrder(Order.OrderType.BID, entry.getQuantity(), instrument, null, new Date(timestamp), entry.getPrice()));
             }
         }
-        // Crypto.com provides 'tt' (last book update) and 't' (message publish). Using 'tt' for order book timestamp.
-        return new OrderBook(new Date(bookEvent.getLastUpdateTimestamp()), asks, bids);
+        return new OrderBook(new Date(timestamp), asks, bids);
     }
+
+    // Overloaded for Streaming OrderBook (uses CryptoComBookEvent DTO from stream module)
+    // Note: DTOs from stream module should be moved or duplicated to base if used here.
+    // For now, assuming CryptoComBookEvent might be a shared DTO.
+     public static OrderBook adaptOrderBook(org.knowm.xchange.cryptocom.dto.marketdata.CryptoComBookEvent streamBookEvent, Instrument instrument) {
+        List<LimitOrder> asks = new ArrayList<>();
+        List<LimitOrder> bids = new ArrayList<>();
+        long timestamp = (streamBookEvent != null && streamBookEvent.getLastUpdateTimestamp() != 0) ? streamBookEvent.getLastUpdateTimestamp() : System.currentTimeMillis();
+
+        if (streamBookEvent != null && streamBookEvent.getAsks() != null) {
+            for (CryptoComOrderBookEntry entry : streamBookEvent.getAsks()) {
+                asks.add(new LimitOrder(Order.OrderType.ASK, entry.getQuantity(), instrument, null, new Date(timestamp), entry.getPrice()));
+            }
+        }
+        if (streamBookEvent != null && streamBookEvent.getBids() != null) {
+            for (CryptoComOrderBookEntry entry : streamBookEvent.getBids()) {
+                bids.add(new LimitOrder(Order.OrderType.BID, entry.getQuantity(), instrument, null, new Date(timestamp), entry.getPrice()));
+            }
+        }
+        return new OrderBook(new Date(timestamp), asks, bids);
+    }
+
 
     public static Ticker adaptTicker(CryptoComTickerEvent tickerEvent, Instrument instrument) {
         return new Ticker.Builder()
@@ -182,10 +201,10 @@ public class CryptoComAdapters {
             .high(tickerEvent.getHigh())
             .low(tickerEvent.getLow())
             .volume(tickerEvent.getVolume())
-            .quoteVolume(tickerEvent.getVolumeValue()) // Assuming vv is quoteVolume
+            .quoteVolume(tickerEvent.getVolumeValue())
             .timestamp(new Date(tickerEvent.getTimestamp()))
             .openInterest(tickerEvent.getOpenInterest())
-            .percentageChange(tickerEvent.getChange()) // Assuming 'c' is percentage change, might need scaling
+            .percentageChange(tickerEvent.getChange())
             .build();
     }
 
@@ -218,19 +237,18 @@ public class CryptoComAdapters {
         switch (cryptoComStatus.toUpperCase(Locale.ROOT)) {
             case "ACTIVE":
                 return Order.OrderStatus.OPEN;
-            case "NEW": // For orders that are acknowledged but not yet active in the book
+            case "NEW":
                 return Order.OrderStatus.NEW;
-            case "PENDING": // For conditional orders not yet triggered
-                return Order.OrderStatus.PENDING_NEW; // Or a custom status if XChange adds more detail
+            case "PENDING":
+                return Order.OrderStatus.PENDING_NEW;
             case "FILLED":
                 return Order.OrderStatus.FILLED;
-            case "CANCELED": // Crypto.com uses "CANCELED"
+            case "CANCELED":
                 return Order.OrderStatus.CANCELED;
             case "REJECTED":
                 return Order.OrderStatus.REJECTED;
             case "EXPIRED":
                 return Order.OrderStatus.EXPIRED;
-            // Add other mappings as necessary
             default:
                 LOG.warn("Unknown order status: {}", cryptoComStatus);
                 return Order.OrderStatus.UNKNOWN;
@@ -244,34 +262,29 @@ public class CryptoComAdapters {
                 return Order.OrderType.LIMIT;
             case "MARKET":
                 return Order.OrderType.MARKET;
-            case "STOP_LOSS":
             case "STOP_LIMIT":
             case "TAKE_PROFIT_LIMIT":
-                return Order.OrderType.STOP; // XChange StopOrder can have a limit price
+                return Order.OrderType.STOP;
             case "STOP_LOSS":
             case "TAKE_PROFIT":
-                return Order.OrderType.STOP; // XChange StopOrder can be a market order if limit price is null
+                return Order.OrderType.STOP;
             default:
                 LOG.warn("Unknown order type: {}", cryptoComOrderType);
-                return null; // Or throw exception
+                return null;
         }
     }
 
     public static Order adaptUserOrder(CryptoComUserOrderEvent event) {
         Instrument instrument = adaptInstrument(event.getInstrumentName());
-        Order.OrderType orderSide = adaptSideToOrderType(event.getSide()); // BID or ASK
-        String cryptoComOrderTypeStr = event.getType(); // LIMIT, MARKET, STOP_LOSS etc.
+        Order.OrderType orderSide = adaptSideToOrderType(event.getSide());
+        String cryptoComOrderTypeStr = event.getType();
 
-        Order.Builder builder = null;
-
-        // Assuming CryptoComUserOrderEvent DTO has getRefPrice() and getRefPriceType() for trigger orders
-        // These would need to be added to the DTO if not already present.
-        BigDecimal triggerPrice = event.getRefPrice(); // Placeholder if DTO doesn't have it yet
-        // String triggerType = event.getRefPriceType(); // Placeholder
+        Order.Builder builder;
+        BigDecimal triggerPrice = event.getRefPrice();
 
         if (cryptoComOrderTypeStr.contains("STOP") || cryptoComOrderTypeStr.contains("TAKE_PROFIT")) {
             StopOrder.Builder stopBuilder = new StopOrder.Builder(orderSide, instrument)
-                .triggerPrice(triggerPrice); // Must have trigger price
+                .triggerPrice(triggerPrice);
             if (cryptoComOrderTypeStr.endsWith("_LIMIT")) {
                 stopBuilder.limitPrice(event.getLimitPrice());
             }
@@ -283,7 +296,6 @@ public class CryptoComAdapters {
             builder = new MarketOrder.Builder(orderSide, instrument);
         } else {
             LOG.warn("Unhandled Crypto.com order type for builder: {}", cryptoComOrderTypeStr);
-            // Fallback to generic LimitOrder builder for safety, though this may be inaccurate
             builder = new LimitOrder.Builder(orderSide, instrument).limitPrice(event.getLimitPrice());
         }
 
@@ -294,23 +306,14 @@ public class CryptoComAdapters {
             .orderStatus(adaptOrderStatus(event.getStatus()))
             .timestamp(new Date(event.getCreateTime()))
             .userReference(event.getClientOid());
-        // Note: maker_fee_rate and taker_fee_rate from event are not directly mapped to XChange Order.
-        // CumulativeFee is available, but XChange Order doesn't have a direct fee field.
-        // Fees are typically part of UserTrade.
 
         if (event.getExecInst() != null) {
             for (String flag : event.getExecInst()) {
                 if ("POST_ONLY".equalsIgnoreCase(flag)) {
                     builder.flag(Order.OrderFlags.POST_ONLY);
                 }
-                // Add other flag mappings if necessary
             }
         }
-
-        // For more specific order types like StopOrder, you might need to check cryptoComOrderTypeStr again
-        // and cast the builder or create a StopOrder directly if trigger price is available.
-        // This simplified version creates LimitOrder or MarketOrder.
-
         return builder.build();
     }
 
@@ -330,7 +333,6 @@ public class CryptoComAdapters {
             .feeAmount(event.getFees())
             .feeCurrency(feeCurrency)
             .orderUserReference(event.getClientOid())
-            // .takerMaker(event.getTakerSide().equalsIgnoreCase("TAKER") ? TakerMaker.TAKER : TakerMaker.MAKER) // If needed
             .build();
     }
 
@@ -340,33 +342,20 @@ public class CryptoComAdapters {
         BigDecimal reserved = event.getReservedQty();
         BigDecimal available;
 
-        // Assumption: 'quantity' is the total amount. 'reserved_qty' is what's on hold (e.g., in open orders).
-        // 'max_withdrawal_balance' is what can actually be withdrawn, which might be less than total - reserved
-        // due to other holds or margin requirements not explicitly detailed in 'reserved_qty'.
-        // For XChange 'available', we typically mean available for trading.
-        // If 'max_withdrawal_balance' also reflects trading availability, it could be used.
-        // Sticking to 'total - reserved' as a common interpretation for 'available for trading'.
         if (total == null) total = BigDecimal.ZERO;
         if (reserved == null) reserved = BigDecimal.ZERO;
         available = total.subtract(reserved);
 
-        // It's good to log if max_withdrawal_balance significantly differs from calculated available,
-        // as it might indicate a misunderstanding of fields.
         if (event.getMaxWithdrawalBalance() != null && event.getMaxWithdrawalBalance().compareTo(available) != 0) {
             LOG.debug("Balance for {}: Calculated available ({}) differs from max_withdrawal_balance ({}). Using calculated.",
                 currency, available, event.getMaxWithdrawalBalance());
         }
-
-        // TODO: Incorporate other fields from user.balance's main object if creating a full AccountInfo,
-        // e.g., total_available_balance (overall), total_margin_balance, total_initial_margin.
-        // This adapter focuses on individual currency balances from the 'position_balances' array.
 
         return new Balance.Builder()
             .currency(currency)
             .total(total)
             .available(available)
             .frozen(reserved)
-            // .borrowed() and .loaned() would require more data, possibly from overall account metrics
             .build();
     }
 
@@ -374,18 +363,16 @@ public class CryptoComAdapters {
         Instrument instrument = adaptInstrument(event.getInstrumentName());
         BigDecimal quantity = event.getQuantity();
         OpenPosition.Type type = (quantity != null && quantity.compareTo(BigDecimal.ZERO) >= 0) ? OpenPosition.Type.LONG : OpenPosition.Type.SHORT;
-        BigDecimal openPosCost = event.getOpenPosCost(); // cost of the open position
+        BigDecimal openPosCost = event.getOpenPosCost();
         BigDecimal absQuantity = (quantity != null) ? quantity.abs() : BigDecimal.ZERO;
         BigDecimal averagePrice = null;
 
         if (openPosCost != null && absQuantity.compareTo(BigDecimal.ZERO) > 0) {
-            averagePrice = openPosCost.divide(absQuantity, 8, BigDecimal.ROUND_HALF_UP); // 8 decimal places, adjust as needed
+            averagePrice = openPosCost.divide(absQuantity, 8, BigDecimal.ROUND_HALF_UP);
         } else if (event.getMarkPrice() != null) {
-            // Fallback to mark_price if cost/quantity isn't suitable for entry price
             averagePrice = event.getMarkPrice();
             LOG.debug("Using mark_price as entry price for position {} due to missing cost/quantity for avg price calculation.", event.getInstrumentName());
         }
-
 
         OpenPosition.Builder positionBuilder = new OpenPosition.Builder()
             .instrument(instrument)
@@ -394,63 +381,51 @@ public class CryptoComAdapters {
             .type(type)
             .unrealisedPnl(event.getOpenPositionPnl());
 
-        // No standard fields in XChange Position for these, but could be added to extended XChange-CryptoComPosition
-        // event.getPosInitialMargin();
-        // event.getPosMaintenanceMargin();
-        // event.getTargetLeverage();
-        // event.getLiquidationPrice(); // If CryptoComPositionEvent DTO gets this field
-
         return positionBuilder.build();
     }
 
-    // Placeholder for adaptUserOrder to access refPrice if added to DTO
-    // This is a conceptual change, assuming CryptoComUserOrderEvent is updated.
-    // If not, the original adaptUserOrder logic for stop orders (commented out) remains non-functional for trigger prices.
-    // For this exercise, I'll assume the DTO *would* be updated.
-    // Example of how it would look if DTO had getRefPrice():
-    /*
-    public static Order adaptUserOrder_withTriggerExample(CryptoComUserOrderEvent event) {
-        Instrument instrument = adaptInstrument(event.getInstrumentName());
-        Order.OrderType orderSide = adaptSideToOrderType(event.getSide());
-        String cryptoComOrderTypeStr = event.getType();
-        Order.Builder builder;
-
-        BigDecimal triggerPrice = event.getRefPrice(); // ASSUMING DTO has this
-        // String triggerType = event.getRefPriceType(); // ASSUMING DTO has this
-
-        if ("STOP_LIMIT".equalsIgnoreCase(cryptoComOrderTypeStr) || "TAKE_PROFIT_LIMIT".equalsIgnoreCase(cryptoComOrderTypeStr)) {
-            builder = new StopOrder.Builder(orderSide, instrument)
-                            .limitPrice(event.getLimitPrice())
-                            .triggerPrice(triggerPrice);
-        } else if ("STOP_LOSS".equalsIgnoreCase(cryptoComOrderTypeStr) || "TAKE_PROFIT".equalsIgnoreCase(cryptoComOrderTypeStr)) {
-            builder = new StopOrder.Builder(orderSide, instrument)
-                            .triggerPrice(triggerPrice); // Market-if-touched stop order
-        } else if ("LIMIT".equalsIgnoreCase(cryptoComOrderTypeStr)) {
-            builder = new LimitOrder.Builder(orderSide, instrument)
-                            .limitPrice(event.getLimitPrice());
-        } else if ("MARKET".equalsIgnoreCase(cryptoComOrderTypeStr)) {
-            builder = new MarketOrder.Builder(orderSide, instrument);
-        } else {
-            LOG.warn("Unhandled Crypto.com order type for builder: {}", cryptoComOrderTypeStr);
-            builder = new LimitOrder.Builder(orderSide, instrument); // Fallback
+    public static List<Instrument> adaptInstruments(List<CryptoComInstrument> cryptoInstruments) {
+        if (cryptoInstruments == null) {
+            return Collections.emptyList();
         }
+        return cryptoInstruments.stream()
+            .filter(CryptoComInstrument::isTradable) // Ensure it's tradable
+            .map(ci -> adaptInstrument(ci.getSymbol()))
+            .filter(i -> i != null)
+            .collect(Collectors.toList());
+    }
 
-        builder.id(event.getOrderId())
-            .originalAmount(event.getQuantity())
-            .cumulativeAmount(event.getCumulativeQuantity())
-            .averagePrice(event.getAveragePrice())
-            .orderStatus(adaptOrderStatus(event.getStatus()))
-            .timestamp(new Date(event.getCreateTime()))
-            .userReference(event.getClientOid());
+    public static ExchangeMetaData adaptToExchangeMetaData(List<CryptoComInstrument> instrumentDtos) {
+        Map<Instrument, InstrumentMetaData> instruments = new HashMap<>();
+        Map<Currency, org.knowm.xchange.dto.meta.CurrencyMetaData> currencies = new HashMap<>();
 
-        if (event.getExecInst() != null) {
-            for (String flag : event.getExecInst()) {
-                if ("POST_ONLY".equalsIgnoreCase(flag)) {
-                    builder.flag(Order.OrderFlags.POST_ONLY);
+        if (instrumentDtos != null) {
+            for (CryptoComInstrument dto : instrumentDtos) {
+                if (!dto.isTradable()) {
+                    continue;
+                }
+                Instrument instrument = adaptInstrument(dto.getSymbol());
+                if (instrument == null) {
+                    continue;
+                }
+
+                InstrumentMetaData instrumentMetaData = new InstrumentMetaData.Builder()
+                        .tradingFee(null) // Fees usually from private endpoint or fixed schedule
+                        .minimumAmount(dto.getQtyTickSize()) // qty_tick_size as minimum amount
+                        .priceScale(dto.getQuoteDecimals())
+                        .volumeScale(dto.getQuantityDecimals()) // For amount/quantity
+                        .priceStep(dto.getPriceTickSize())
+                        .build();
+                instruments.put(instrument, instrumentMetaData);
+
+                if (instrument instanceof CurrencyPair) {
+                    CurrencyPair cp = (CurrencyPair) instrument;
+                    currencies.putIfAbsent(cp.base, new org.knowm.xchange.dto.meta.CurrencyMetaData(dto.getQuantityDecimals(), null));
+                    currencies.putIfAbsent(cp.counter, new org.knowm.xchange.dto.meta.CurrencyMetaData(dto.getQuoteDecimals(), null));
                 }
             }
         }
-        return builder.build();
+        // TODO: Fetch fee schedule if available and populate tradingFee, currency withdrawal fees etc.
+        return new ExchangeMetaData(instruments, currencies, null, null, null);
     }
-    */
 }

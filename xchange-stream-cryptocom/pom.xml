@@ -24,6 +24,11 @@
 
     <!-- Parent provides default configuration for dependencies -->
     <dependencies>
+        <dependency>
+            <groupId>org.knowm.xchange</groupId>
+            <artifactId>xchange-cryptocom</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.knowm.xchange</groupId>
