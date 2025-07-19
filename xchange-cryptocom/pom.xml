@@ -7,8 +7,9 @@
     <parent>
         <groupId>org.knowm.xchange</groupId>
         <artifactId>xchange-parent</artifactId>
-        <version>5.2.3-SNAPSHOT</version> <!-- Ensure this version is correct or use a property -->
-        <relativePath>../../pom.xml</relativePath> <!-- Adjusted relativePath -->
+        <version>5.2.3-SNAPSHOT</version>
+ <!-- Ensure this version is correct or use a property -->
+     <!--   <relativePath>../../pom.xml</relativePath> --> <!-- Adjusted relativePath -->
     </parent>
 
     <artifactId>xchange-cryptocom</artifactId>
